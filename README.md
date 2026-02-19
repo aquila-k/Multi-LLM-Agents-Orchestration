@@ -1,6 +1,6 @@
 # Multi-LLM Agents Orchestration
 
-Claude をオーケストレーターとして使い、外部 CLI（Codex / Gemini / GitHub Copilot）へ段階的に委譲するための、Task Packet ベース実行フレームワークです。
+Claude Codeを中心として、Codex / Gemini / GitHub CopilotなどのエージェントをCLI経由で柔軟に組み合わせてタスクを実行するためのスキルと、その運用のためのスクリプトや設定ファイルを提供する。
 
 This repository is a Task Packet-based orchestration framework where Claude acts as the orchestrator and delegates stage work to external CLIs (Codex / Gemini / GitHub Copilot).
 
@@ -10,9 +10,9 @@ This repository is a Task Packet-based orchestration framework where Claude acts
 
 ### 1) 前提条件（必須）
 
-- **Claude Code の利用が前提**です。
-- **Codex / Gemini / GitHub Copilot のうち、少なくとも 1 つ以上の CLI が利用可能**である必要があります。
-- 使用する CLI は、**インストールと認証を完了済み**にしてください（詳細手順は各公式ドキュメントを参照）。
+- **Claude Code が使用可能であること**(Claude Code以外のエージェントから呼び出す場合には別途最適化が必要な可能性がある。)
+- **Codex CLI / Gemini CLI / GitHub Copilot CLI のいずれかが利用可能**であること。
+- 使用するCLIのインストールと認証が完了していること（公式ドキュメントを参照してください）:
   - Codex CLI: [Official guide](https://developers.openai.com/codex/cli)
   - Gemini CLI: [Official guide](http://geminicli.com/docs/get-started/)
   - Copilot CLI: [Official guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)
@@ -124,8 +124,8 @@ routing:
 
 - Task Packet 仕様: `docs/TOOLS/TASK_PACKET.md`
 - モデルルーティング: `docs/TOOLS/MODEL_ROUTING.md`
-- 構成スナップショット: `configs/config-state.md`, `configs/config-state.yaml`
-- 中央実行エントリ: `scripts/agent-cli/dispatch.sh`
+- 設定情報: `configs/config-state.md`, `configs/config-state.yaml`
+- メインスクリプト: `scripts/agent-cli/dispatch.sh`
 
 ---
 
