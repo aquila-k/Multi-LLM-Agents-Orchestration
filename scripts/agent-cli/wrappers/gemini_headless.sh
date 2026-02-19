@@ -25,6 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/../lib"
 source "${LIB_DIR}/log.sh"
 source "${LIB_DIR}/atomic.sh"
+source "${LIB_DIR}/path_resolve.sh"
 
 # Defaults
 PROMPT_FILE=""
@@ -64,10 +65,7 @@ finish_exit() {
 }
 
 # Validate
-if ! command -v gemini &>/dev/null; then
-  log_error "gemini binary not found"
-  finish_exit 10
-fi
+resolve_tool_or_die gemini 10 || finish_exit 10
 if [[ -z "$PROMPT_FILE" || ! -f "$PROMPT_FILE" ]]; then
   log_error "prompt-file not found: ${PROMPT_FILE:-<unset>}"
   finish_exit 11

@@ -2,126 +2,119 @@
 
 [日本語](./docs/README/README.ja.md)
 
-This repository is a Task Packet-based orchestration framework where Claude acts as the orchestrator and delegates stage work to external CLIs (Codex / Gemini / GitHub Copilot).
+A Claude Code skill that lets you delegate complex tasks to Codex, Gemini, and GitHub Copilot — orchestrated automatically.
+You write what you want done. Claude Code handles the rest.
 
 ---
 
-## English
+## How It Works
 
-### 1) Prerequisites (Required)
+When you invoke `/agent-collab` in Claude Code, it runs a multi-stage pipeline:
 
-- **Claude Code is required**.
-- At least **one CLI among Codex / Gemini / GitHub Copilot must be available**.
-- The CLI(s) you use must be **installed and authenticated** (follow official docs; detailed install steps are intentionally omitted here):
-  - Codex CLI: [Official guide](https://developers.openai.com/codex/cli)
-  - Gemini CLI: [Official guide](http://geminicli.com/docs/get-started/)
-  - Copilot CLI: [Official guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)
-- You also need `git`, `python3`, `perl`, and a YAML parser (`yq` or `python3 + pyyaml`).
+1. **Plan** — Gemini drafts and refines an implementation plan
+2. **Impl** — Codex or Copilot implements it
+3. **Review** — Gemini reviews the output
 
-> This project assumes your CLI environment is already usable. If not, set it up first with the official links above.
+Claude Code acts as the orchestrator throughout. You never need to call scripts directly.
 
-### 2) From clone to initial validation
+---
+
+## Prerequisites
+
+**Claude Code** must be installed and running. Then install and authenticate at least one of the following CLIs:
+
+| CLI | Install guide |
+| --- | ------------- |
+| Gemini CLI | [geminicli.com/docs/get-started](http://geminicli.com/docs/get-started/) |
+| OpenAI Codex CLI | [developers.openai.com/codex/cli](https://developers.openai.com/codex/cli) |
+| GitHub Copilot CLI | [GitHub Docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
+
+You also need `python3` with `pyyaml` and `perl` (both are standard on macOS/Linux):
 
 ```bash
-git clone <your-fork-or-repo-url>
+pip3 install pyyaml
+```
+
+> You only need the CLIs you plan to use. The skill will tell you which ones are missing if needed.
+
+---
+
+## Setup
+
+```bash
+git clone <this-repo-url>
 cd Multi-LLM-Agents-Orchestration
-
-# Check only the tools you plan to use (example: codex + gemini)
-./scripts/agent-cli/preflight.sh --tools codex,gemini
 ```
 
-### 3) Mandatory preparation before using agent-collab
+Open this directory in Claude Code. The `/agent-collab` skill is automatically available.
 
-Before running `agent-collab`, prepare a **clear task request document**. If your task intent is ambiguous, orchestration quality and verification reliability will degrade.
+---
 
-At minimum, define:
+## Usage
 
-- Goal
-- Scope (allow / deny)
-- Acceptance Criteria
-- Verify Commands
-- Constraints
+### Step 1 — Write your task document
 
-Minimal template:
-
-```md
-# Task Request
-
-- Goal:
-- Scope (allow/deny):
-- Acceptance Criteria:
-- Verify Commands:
-- Constraints:
-```
-
-### 4) Typical execution patterns
-
-#### A. Full flow (Plan → Impl → Review)
+Copy the template and fill it in:
 
 ```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode all \
-  --preflight .tmp/agent-collab/preflight.md \
-  --goal "Implement approved plan"
+mkdir -p .tmp/agent-collab
+cp .claude/skills/agent-collab/preflight.template.md .tmp/agent-collab/preflight.md
+# Edit .tmp/agent-collab/preflight.md
 ```
 
-#### B. Direct Task Packet pipeline
+The document should describe:
 
-```bash
-./scripts/agent-cli/dispatch.sh pipeline --task .tmp/task/<task-id> --plan auto
+| Field | What to write |
+| ----- | ------------- |
+| **Goal** | What must be achieved |
+| **Scope** | What can / cannot be changed |
+| **Acceptance Criteria** | Verifiable completion conditions |
+| **Verification Commands** | Commands that confirm success |
+| **Constraints** | Compatibility, performance, deadlines |
+
+The clearer your document, the better the output. Vague goals lead to vague results.
+
+### Step 2 — Invoke the skill
+
+In Claude Code, type:
+
+```text
+/agent-collab
 ```
 
-### 5) Customization after clone
+Claude Code will read your preflight document, infer whether you need planning, implementation, or review, and run the appropriate pipeline automatically.
 
-#### Model routing
+### Step 3 — Review the output
 
-- Provider defaults and allowed models: `configs/servant/*.yaml`
-- Stage-level model assignments: `configs/pipeline/*.yaml`
-- Effective priority is roughly: `manifest override > stage model > purpose model > default model`
+Results are written to `.tmp/agent-collab/<run-id>/`. Claude Code will summarize the outcome and surface any failures.
 
-Recommended strategy:
+---
 
-- Use stronger models for impl/verify stages
-- Use lower-cost models for review-heavy stages
-- Use low-latency models for one-shot workflows
+## What Happens Automatically
 
-#### Behavior tuning
+- **Path resolution** — CLIs installed via NVM, Homebrew, or other non-standard locations are found automatically. If a CLI cannot be located, you will be asked to run `which <tool>` and provide the result.
+- **Mode selection** — Claude Code infers `plan`, `impl`, or `review` from your request. You can also say explicitly: *"plan only"*, *"implement the approved plan"*, *"review the existing output"*.
+- **Routing** — The right CLIs are selected based on task size and type. No configuration required for typical use.
 
-- Routing intent via `manifest.yaml` `routing.intent`
-  - e.g. `safe_impl`, `one_shot_impl`, `design_only`, `review_cross`
-- Timeout policy via `timeout_mode` (`enforce` or `wait_done`)
-- Budget control via `budgets.paid_call_budget` and `budgets.retry_budget`
-- Context compression via `context.digest_policy` (`off`, `auto`, `aggressive`)
+---
 
-#### Verification quality
+## Advanced: Manual Mode Selection
 
-- Keep `acceptance.commands[]` meaningful and executable
-- Keep `acceptance.criteria[]` reviewable and concrete
-- On failure, check `outputs/_summary.md` and `state/last_failure.json` first
+If you want to control which phase runs, tell Claude Code explicitly when invoking the skill:
 
-### 6) Intent-to-pipeline guidance
+| What you want | What to say |
+| ------------- | ----------- |
+| Planning only | `/agent-collab` + *"plan only"* |
+| Implement an existing plan | `/agent-collab` + *"implement the approved plan"* |
+| Review existing output | `/agent-collab` + *"review the output"* |
+| End-to-end (all phases) | `/agent-collab` + *"run all phases"* |
 
-- **Large implementation changes**: `safe_impl`
-- **Small/focused change**: `one_shot_impl`
-- **Design/research only**: `design_only`
-- **Post-implementation quality hardening**: `review_cross` or `post_impl_review`
+---
 
-### 6.1) Recommended profile (starting point)
+## Troubleshooting
 
-- **Default recommendation**: `safe_impl`
-- **Conditional recommendation**: use `one_shot_impl` only for small, well-specified changes
-- **Quality-hardening focus**: use `post_impl_review` when post-implementation assurance is the main goal
+**CLI not found** — The skill will print which binary is missing and what to run (`which <tool>`). Provide that output and Claude Code will retry.
 
-Example (`manifest.yaml`):
+**Poor output quality** — The most common cause is an underspecified preflight document. Add concrete acceptance criteria and verification commands.
 
-```yaml
-routing:
-  intent: safe_impl
-```
-
-### 7) Core references
-
-- Task Packet spec: `docs/TOOLS/TASK_PACKET.md`
-- Model routing policy: `docs/TOOLS/MODEL_ROUTING.md`
-- Effective config snapshots: `configs/config-state.md`, `configs/config-state.yaml`
-- Central execution entrypoint: `scripts/agent-cli/dispatch.sh`
+**Timeout** — Large tasks may exceed default timeouts. Break the task into smaller pieces, or mention it when invoking the skill.

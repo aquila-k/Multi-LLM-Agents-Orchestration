@@ -1,126 +1,118 @@
 # Multi-LLM Agents Orchestration
 
-Claude Codeを中心として、Codex / Gemini / GitHub CopilotなどのエージェントをCLI経由で柔軟に組み合わせてタスクを実行するためのスキルと、その運用のためのスクリプトや設定ファイルを提供する。
+Codex / Gemini / GitHub Copilot などの外部 CLI に複雑なタスクを委譲できる Claude Code スキルです。
+やりたいことを文書に書いてスキルを呼び出すだけで、あとは Claude Code が自動でパイプラインを回します。
 
 ---
 
-## 日本語
+## 仕組み
 
-### 1) 前提条件（必須）
+`/agent-collab` を Claude Code で呼び出すと、以下のパイプラインが自動で実行されます:
 
-- **Claude Code が使用可能であること**(Claude Code以外のエージェントから呼び出す場合には別途最適化が必要な可能性がある。)
-- **Codex CLI / Gemini CLI / GitHub Copilot CLI のいずれかが利用可能**であること。
-- 使用するCLIのインストールと認証が完了していること（公式ドキュメントを参照してください）:
-  - Codex CLI: [Official guide](https://developers.openai.com/codex/cli)
-  - Gemini CLI: [Official guide](http://geminicli.com/docs/get-started/)
-  - Copilot CLI: [Official guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli)
-- 追加で `git` / `python3` / `perl` / YAML パーサー（`yq` または `python3 + pyyaml`）が必要です。
+1. **Plan** — Gemini が実装計画を立案・洗練
+2. **Impl** — Codex または Copilot が実装
+3. **Review** — Gemini が成果物をレビュー
 
-> このプロジェクトは「CLI がすでに使える状態」を前提にしています。未導入の場合のみ、上記公式手順で準備してください。
+スクリプトを直接叩く必要はありません。
 
-### 2) clone から初期確認まで
+---
+
+## 前提条件
+
+**Claude Code** が使えること。そのうえで、以下の CLI を 1 つ以上インストール・認証してください:
+
+| CLI | インストールガイド |
+| --- | ----------------- |
+| Gemini CLI | [geminicli.com/docs/get-started](http://geminicli.com/docs/get-started/) |
+| OpenAI Codex CLI | [developers.openai.com/codex/cli](https://developers.openai.com/codex/cli) |
+| GitHub Copilot CLI | [GitHub Docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
+
+また、`python3 + pyyaml` と `perl` が必要です（macOS/Linux では標準で入っています）:
 
 ```bash
-git clone <your-fork-or-repo-url>
+pip3 install pyyaml
+```
+
+> 使う CLI だけ用意すれば十分です。見つからない CLI があった場合は、スキル側が「`which <tool>` を実行して出力を教えてください」と案内します。
+
+---
+
+## セットアップ
+
+```bash
+git clone <this-repo-url>
 cd Multi-LLM-Agents-Orchestration
-
-# 使う CLI のみを指定して事前確認（例: codex + gemini）
-./scripts/agent-cli/preflight.sh --tools codex,gemini
 ```
 
-### 3) まずやるべきこと（依頼文書の明確化）
+このディレクトリを Claude Code で開くだけで `/agent-collab` スキルが使えるようになります。
 
-`agent-collab` を使う前に、**何を達成したいかを明確化した文書**を必ず作成してください。
-目的が曖昧なまま実行しても、品質・再現性・検証可能性が下がります。
+---
 
-最低限、次を明記することを推奨します。
+## 使い方
 
-- Goal（達成したい結果）
-- Scope（変更してよい範囲 / 禁止範囲）
-- Acceptance Criteria（完了条件）
-- Verify Commands（検証コマンド）
-- Constraints（制約: 互換性、性能、締切など）
+### Step 1 — タスク文書を書く
 
-簡易テンプレート例:
-
-```md
-# Task Request
-
-- Goal:
-- Scope (allow/deny):
-- Acceptance Criteria:
-- Verify Commands:
-- Constraints:
-```
-
-### 4) 実行方法（代表パターン）
-
-#### A. Plan → Impl → Review を一括で回す
+テンプレートをコピーして中身を記入します:
 
 ```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode all \
-  --preflight .tmp/agent-collab/preflight.md \
-  --goal "Implement approved plan"
+mkdir -p .tmp/agent-collab
+cp .claude/skills/agent-collab/preflight.template.md .tmp/agent-collab/preflight.md
+# .tmp/agent-collab/preflight.md を編集する
 ```
 
-#### B. Task Packet を直接実行する
+以下の項目を書いてください:
 
-```bash
-./scripts/agent-cli/dispatch.sh pipeline --task .tmp/task/<task-id> --plan auto
+| 項目 | 何を書くか |
+| ---- | ---------- |
+| **Goal** | 達成したい結果 |
+| **Scope** | 変更してよい範囲 / 変更してはいけない範囲 |
+| **Acceptance Criteria** | 完了の判定基準（検証可能な形で） |
+| **Verification Commands** | 完了確認のコマンド |
+| **Constraints** | 互換性・性能・締切などの制約 |
+
+文書が具体的なほど、アウトプットの品質が上がります。曖昧な目標は曖昧な結果を生みます。
+
+### Step 2 — スキルを呼び出す
+
+Claude Code で以下を入力します:
+
+```text
+/agent-collab
 ```
 
-### 5) カスタマイズ手順（clone 後に調整するポイント）
+Claude Code が preflight 文書を読み、「計画が必要か・実装か・レビューか」を自動で判断してパイプラインを実行します。
 
-#### モデル選定
+### Step 3 — 結果を確認する
 
-- プロバイダ別の既定値・許可モデル: `configs/servant/*.yaml`
-- パイプライン段階ごとの固定モデル: `configs/pipeline/*.yaml`
-- 優先順位は概ね `manifest override > stage model > purpose model > default model`
+成果物は `.tmp/agent-collab/<run-id>/` に書き出されます。Claude Code が結果を要約し、失敗があれば原因も伝えます。
 
-推奨運用:
+---
 
-- 実装（impl / verify）は強めモデル
-- レビュー（review）は中コストモデル
-- one-shot は低遅延モデル
+## 自動で行われること
 
-#### 振る舞いの調整
+- **パス解決** — NVM や Homebrew など非標準の場所にインストールされた CLI も自動で検出します。見つからない場合は `which <tool>` の実行を案内します。
+- **モード自動判断** — リクエスト内容から `plan` / `impl` / `review` を自動で推定します。
+- **ルーティング** — タスクの規模や種類に応じて適切な CLI が選ばれます。通常は設定不要です。
 
-- ルーティング意図: `manifest.yaml` の `routing.intent`
-  - 例: `safe_impl`, `one_shot_impl`, `design_only`, `review_cross`
-- タイムアウト/待機方針: `timeout_mode`（`enforce` / `wait_done`）
-- コスト管理: `budgets.paid_call_budget`, `budgets.retry_budget`
-- コンテキスト圧縮: `context.digest_policy`（`off` / `auto` / `aggressive`）
+---
 
-#### 検証品質の調整
+## 応用: フェーズを明示的に指定する
 
-- `acceptance.commands[]` を実際に意味のある検証コマンドにする
-- `acceptance.criteria[]` をレビュー可能な文で定義する
-- 失敗時は `outputs/_summary.md` と `state/last_failure.json` を最初に確認する
+特定のフェーズだけを実行したい場合は、スキル呼び出し時に一言添えてください:
 
-### 6) モデル選定ガイド（目的別）
+| やりたいこと | Claude Code への指示 |
+| ------------ | -------------------- |
+| 計画だけ | `/agent-collab` + *"plan only"* |
+| 承認済み計画を実装 | `/agent-collab` + *"implement the approved plan"* |
+| 成果物をレビュー | `/agent-collab` + *"review the output"* |
+| 全フェーズを一括実行 | `/agent-collab` + *"run all phases"* |
 
-- **大きな差分を伴う実装**: `safe_impl`（brief → impl → verify → review）
-- **軽微修正/定型作業**: `one_shot_impl`
-- **実装前の設計検討**: `design_only`
-- **既存差分の品質強化**: `review_cross` または `post_impl_review`
+---
 
-### 6.1) 推奨プロファイル（最初の運用設定）
+## トラブルシューティング
 
-- **初期推奨**: `safe_impl`
-- **条件付き推奨**: 変更が小さく要件が固い場合のみ `one_shot_impl`
-- **レビュー強化時**: 実装後の品質担保が主目的なら `post_impl_review`
+**CLI が見つからない** — どのバイナリが不足しているか、何を実行すればよいか（`which <tool>`）をスキルが案内します。出力を Claude Code に渡すと自動でリトライします。
 
-設定例（`manifest.yaml`）:
+**アウトプットの品質が低い** — 原因のほとんどは preflight 文書の不足です。Acceptance Criteria と Verification Commands を具体的に書き直してください。
 
-```yaml
-routing:
-  intent: safe_impl
-```
-
-### 7) 主な参照先
-
-- Task Packet 仕様: `docs/TOOLS/TASK_PACKET.md`
-- モデルルーティング: `docs/TOOLS/MODEL_ROUTING.md`
-- 設定情報: `configs/config-state.md`, `configs/config-state.yaml`
-- メインスクリプト: `scripts/agent-cli/dispatch.sh`
+**タイムアウト** — タスクが大きすぎる可能性があります。タスクを分割するか、スキル呼び出し時にその旨を伝えてください。

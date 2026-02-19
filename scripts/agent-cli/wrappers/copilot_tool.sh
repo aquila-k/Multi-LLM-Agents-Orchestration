@@ -26,6 +26,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="${SCRIPT_DIR}/../lib"
 source "${LIB_DIR}/log.sh"
 source "${LIB_DIR}/atomic.sh"
+source "${LIB_DIR}/path_resolve.sh"
 
 MAX_PROMPT_BYTES=51200  # 50KB hard limit
 
@@ -61,10 +62,7 @@ finish_exit() {
 }
 
 # Validate
-if ! command -v copilot &>/dev/null; then
-  log_error "copilot binary not found"
-  finish_exit 30
-fi
+resolve_tool_or_die copilot 30 || finish_exit 30
 if [[ -z "$PROMPT_FILE" || ! -f "$PROMPT_FILE" ]]; then
   log_error "prompt-file not found: ${PROMPT_FILE:-<unset>}"
   finish_exit 31
