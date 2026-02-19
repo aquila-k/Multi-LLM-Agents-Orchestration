@@ -1,0 +1,23 @@
+version: 1
+pipeline: plan
+
+default_profile: standard
+profiles:
+  standard:
+    flags:
+      enable_stage2_codex: true
+      enable_stage2_gemini: true
+      enable_stage3_cross_review: true
+    options:
+      consolidate_mode: standard
+      timeout_mode: wait_done
+    stage_models:
+      stage1: claude-sonnet-4-6
+      stage2_codex: gpt-5.3-codex
+      stage2_gemini: pro
+      stage3_codex_review: gpt-5.2-codex
+      stage3_gemini_review: pro
+      stage4: claude-sonnet-4-6
+    stage_efforts:
+      stage2_codex: medium
+      stage3_codex_review: medium

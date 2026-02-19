@@ -1,0 +1,26 @@
+version: 1
+tool: gemini
+
+default_model: pro
+allowed_models:
+  - auto
+  - pro
+  - flash
+  - flash-lite
+  - gemini-2.5-pro
+  - gemini-2.5-flash
+  - gemini-2.5-flash-lite
+  - gemini-3-pro-preview
+
+wrapper_defaults:
+  approval_mode: default
+  sandbox: false
+  timeout_ms: 600000
+  timeout_mode: wait_done
+
+purpose_models:
+  impl: pro
+  review: pro
+  verify: flash
+  plan: pro
+  one_shot: flash

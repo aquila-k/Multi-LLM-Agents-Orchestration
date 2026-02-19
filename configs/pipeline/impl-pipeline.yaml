@@ -1,0 +1,62 @@
+version: 1
+pipeline: impl
+
+default_profile: safe_impl
+profiles:
+  safe_impl:
+    stages:
+      - gemini_brief
+      - codex_impl
+      - codex_verify
+      - gemini_review
+    flags:
+      enable_brief: true
+      enable_verify: true
+      enable_review: true
+    options:
+      impl_mode: safe
+      timeout_mode: wait_done
+    stage_models:
+      gemini_brief: pro
+      codex_impl: gpt-5.3-codex
+      codex_verify: gpt-5.3-codex
+      gemini_review: pro
+    stage_efforts:
+      codex_impl: high
+      codex_verify: high
+
+  one_shot_impl:
+    stages:
+      - gemini_brief
+      - copilot_runbook
+      - codex_verify
+    flags:
+      enable_brief: true
+      enable_verify: true
+      enable_review: false
+    options:
+      impl_mode: one_shot
+      timeout_mode: wait_done
+    stage_models:
+      gemini_brief: flash
+      copilot_runbook: claude-sonnet-4-6
+      codex_verify: gpt-5.3-codex
+    stage_efforts:
+      codex_verify: medium
+
+  design_only:
+    stages:
+      - gemini_brief
+      - gemini_test_design
+      - gemini_review
+    flags:
+      enable_brief: true
+      enable_verify: false
+      enable_review: true
+    options:
+      impl_mode: safe
+      timeout_mode: wait_done
+    stage_models:
+      gemini_brief: pro
+      gemini_test_design: pro
+      gemini_review: pro

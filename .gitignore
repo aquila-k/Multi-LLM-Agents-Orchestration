@@ -1,3 +1,9 @@
 .vscode/*
 plan/*
-claude_test_pub/*
+
+# Runtime artifacts
+.tmp/*
+!.tmp/task/
+.tmp/task/*
+!.tmp/task/.gitkeep
+__pycache__/*

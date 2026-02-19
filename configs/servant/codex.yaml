@@ -1,0 +1,28 @@
+version: 1
+tool: codex
+
+default_model: gpt-5.3-codex
+allowed_models:
+  - gpt-5.3-codex
+  - gpt-5.2-codex
+  - gpt-5-codex
+  - gpt-5.3-codex-spark
+
+wrapper_defaults:
+  effort: high
+  timeout_ms: 600000
+  timeout_mode: wait_done
+
+purpose_models:
+  impl: gpt-5.3-codex
+  review: gpt-5.2-codex
+  verify: gpt-5.3-codex
+  plan: gpt-5.3-codex
+  one_shot: gpt-5.2-codex
+
+purpose_efforts:
+  impl: high
+  review: medium
+  verify: high
+  plan: medium
+  one_shot: medium
