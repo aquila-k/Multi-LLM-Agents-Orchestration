@@ -1,105 +1,65 @@
 ---
 name: agent-collab
-description: Unified multi-LLM orchestrator for planning, implementation, and review workflows via a single runner. Invoke manually with a natural-language instruction, infer intent in this SKILL.md, then execute the matching mode.
+description: Manual-entry orchestration skill for this repository. Activate only when the user explicitly invokes /agent-collab (or names agent-collab), then route to plan/impl/review execution.
 disable-model-invocation: true
-argument-hint: "<instruction> [--preflight <file>] [--goal <text>] [--task-dir <dir>]"
-allowed-tools: Bash(./scripts/agent-cli/*), Bash(mkdir *), Bash(cp *), Bash(cat *), Bash(head *), Bash(date *), Bash(ls *), Read, Grep, Glob
-compatibility: Requires bash, python3, and runnable Gemini/Codex/Copilot CLIs.
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
-# Agent Collaboration (Unified Entry)
+# Agent Collab Router
 
-This skill is manual-only (`disable-model-invocation: true`).
-Default behavior: infer intent and select one mode from `plan|impl|review`.
-Use `scripts/agent-cli/run_agent_collab.sh` with the selected explicit mode.
-Use `--mode all` only when the user explicitly requests an end-to-end run.
+Use this skill as the explicit entrypoint router.
 
-## Intent Routing (in SKILL.md only)
+## Activation Policy
 
-Infer mode from the user request before executing scripts:
+1. Activate only when the user explicitly invokes `/agent-collab` or explicitly names `agent-collab`.
+2. Do not auto-activate from inferred intent alone.
+3. Delegation to phase skills is allowed only after explicit `agent-collab` activation.
 
-- Plan:
-  - Intent class: planning, requirement shaping, scoping, decomposition, design preparation
-  - Run: `--mode plan`
-- Impl:
-  - Intent class: implement or modify code according to an agreed specification
-  - Run: `--mode impl`
-- Review:
-  - Intent class: review, test, verify, validate, or audit existing implementation
-  - Run: `--mode review`
+## Execution Permission Header
 
-Rules:
+Allowed script entrypoints for this skill:
 
-1. Do not delegate intent understanding to scripts.
-2. Do not hardcode keyword routing in scripts.
-3. Default priority: `review` > `plan` > `impl`.
-4. If intent is ambiguous, ask one short clarification question.
+1. `./scripts/agent-cli/run_agent_collab.sh`
+2. `./scripts/agent-cli/dispatch_plan.sh`
+3. `./scripts/agent-cli/dispatch_impl.sh`
+4. `./scripts/agent-cli/dispatch_review.sh`
 
-## Required Conditions by Mode
+Before executing scripts outside this list, require explicit user confirmation.
 
-- `plan`: `--preflight <file>`
-- `impl`:
-  - Existing task packet: `--task-dir <dir>` with `manifest.yaml`, or
-  - Bootstrap from approved plan: `--plan-file <file> --goal "<text>"`
-- `review`:
-  - Existing task packet: `--task-dir <dir>`, or
-  - Direct inputs: `--context-pack <file> --impl-report <file>`
-- `all`: `--preflight <file> --goal "<text>"`
+## Route Intent
 
-## Execution Commands
+1. Infer one mode: `plan`, `impl`, `review`, or `all`.
+2. Prioritize explicit user wording over defaults.
+3. Ask one short clarification question only when intent remains ambiguous.
+4. Route to the phase skill and execute its command path.
 
-Plan:
+## Delegate by Mode
 
-```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode plan \
-  --preflight .tmp/agent-collab/preflight.md
-```
+1. `plan` -> `.claude/skills/plan-ping-pong/SKILL.md`
+2. `impl` -> `.claude/skills/impl-pipeline/SKILL.md`
+3. `review` -> `.claude/skills/review-pipeline/SKILL.md`
+4. `all` -> run `plan -> impl -> review` in sequence with `run_agent_collab.sh`
 
-Impl from approved plan:
+## Enforce V2 Contracts
+
+1. Use canonical task root `.tmp/task/<task-name>/`.
+2. Keep method-based execution aligned with `configs-v2/skills/*.yaml`.
+3. Preserve review contracts: finding-first, join barrier, sequential fix queue.
+4. Preserve web evidence strict behavior when web mode is enabled.
+
+## Run Commands
+
+Use these commands as canonical entrypoints:
 
 ```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode impl \
-  --plan-file .tmp/agent-collab/20260219-120000/plan/final.md \
-  --goal "Implement the approved plan"
+./scripts/agent-cli/run_agent_collab.sh --mode plan --task-name <task-name> --preflight <file>
+./scripts/agent-cli/run_agent_collab.sh --mode impl --task-name <task-name> --goal "<goal>"
+./scripts/agent-cli/run_agent_collab.sh --mode review --task-name <task-name>
+./scripts/agent-cli/run_agent_collab.sh --mode all --task-name <task-name> --preflight <file> --goal "<goal>"
 ```
 
-Review from existing task packet:
+## Validate Outputs
 
-```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode review \
-  --task-dir .tmp/task/20260218-001
-```
-
-All phases:
-
-```bash
-./scripts/agent-cli/run_agent_collab.sh \
-  --mode all \
-  --preflight .tmp/agent-collab/preflight.md \
-  --goal "Implement the approved plan"
-```
-
-## Quick Start (Plan Input)
-
-```bash
-mkdir -p .tmp/agent-collab
-cp .claude/skills/agent-collab/preflight.template.md .tmp/agent-collab/preflight.md
-# edit .tmp/agent-collab/preflight.md
-```
-
-## Output Layout
-
-- Plan: `.tmp/agent-collab/<task-id>/plan/`
-- Implementation: `.tmp/agent-collab/<task-id>/task/`
-- Review: `.tmp/agent-collab/<task-id>/review/`
-
-## Skill Resources
-
-- `preflight.template.md`
-- `stage1_draft.prompt.md`
-- `stage2_enrich.prompt.md`
-- `stage3_crossreview.prompt.md`
-- `stage4_consolidate.prompt.md`
+1. Confirm phase summary artifact exists after each mode.
+2. Confirm `state/` metadata is updated.
+3. Stop on `STOP_AND_CONFIRM` and request human confirmation.

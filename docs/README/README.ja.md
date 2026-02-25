@@ -1,39 +1,60 @@
 # Multi-LLM Agents Orchestration
 
-Codex / Gemini / GitHub Copilot などの外部 CLI に複雑なタスクを委譲できる Claude Code スキルです。
-やりたいことを文書に書いてスキルを呼び出すだけで、あとは Claude Code が自動でパイプラインを回します。
+Codex・Gemini・GitHub Copilot といった外部ツールに複雑な作業を任せられる、Claude Code 向けのスキル集です。
+やりたいことをドキュメントに書いてスキルを呼び出すだけで、計画・実装・確認の一連の作業を Claude Code が代わりに進めます。
 
 ---
 
-## 仕組み
+## ⚠️ 必ず手動で呼び出してください
 
-`/agent-collab` を Claude Code で呼び出すと、以下のパイプラインが自動で実行されます:
+**このリポジトリのスキルは、明示的に呼び出さない限り一切動きません。**
+会話の内容から意図を推測して勝手に起動したり、バックグラウンドで何かを実行したりすることはありません。
 
-1. **Plan** — Gemini が実装計画を立案・洗練
-2. **Impl** — Codex または Copilot が実装
-3. **Review** — Gemini が成果物をレビュー
-
-スクリプトを直接叩く必要はありません。
+使うときは、Claude Code のプロンプトでスキル名（例: `/agent-collab`）をそのまま入力してください。
 
 ---
 
-## 前提条件
+## 動作の流れ
 
-**Claude Code** が使えること。そのうえで、以下の CLI を 1 つ以上インストール・認証してください:
+`/agent-collab` を呼び出すと、Claude Code が全体の司令塔となり、次の順序で処理を進めます。
 
-| CLI | インストールガイド |
-| --- | ----------------- |
-| Gemini CLI | [geminicli.com/docs/get-started](http://geminicli.com/docs/get-started/) |
-| OpenAI Codex CLI | [developers.openai.com/codex/cli](https://developers.openai.com/codex/cli) |
+1. **Plan（計画）** — Gemini が実装計画を作成・ブラッシュアップします。
+2. **Impl（実装）** — Codex または Copilot がコードを書きます。
+3. **Review（確認）** — Gemini が成果物を精査します。
+
+スクリプトを直接実行する必要はありません。Claude Code がすべて代行します。
+
+---
+
+## 使えるスキル一覧
+
+| スキル                    | 役割                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `/agent-collab`           | 全体の入口です。計画・実装・確認への振り分け、または全工程の一括実行を担います。   |
+| `/plan-ping-pong`         | 計画工程だけを実行します。                                                         |
+| `/impl-pipeline`          | 実装工程だけを実行します。                                                         |
+| `/review-pipeline`        | 確認工程だけを実行します（複数の観点による並行レビューと修正の仕組みを含みます）。 |
+| `/security-lens-playbook` | セキュリティ観点でのレビューと、ゲート判定のトリアージを行います。                 |
+
+---
+
+## 必要な環境
+
+**Claude Code** が動いていることが前提です。加えて、以下の CLI を少なくとも 1 つインストールし、ログインしておいてください。
+
+| CLI                | 案内ページ                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Gemini CLI         | [geminicli.com/docs/get-started](http://geminicli.com/docs/get-started/)                                     |
+| OpenAI Codex CLI   | [developers.openai.com/codex/cli](https://developers.openai.com/codex/cli)                                   |
 | GitHub Copilot CLI | [GitHub Docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli) |
 
-また、`python3 + pyyaml` と `perl` が必要です（macOS/Linux では標準で入っています）:
+また `python3`（`pyyaml` が必要）と `perl` を使います（macOS / Linux では最初から入っています）。
 
 ```bash
 pip3 install pyyaml
 ```
 
-> 使う CLI だけ用意すれば十分です。見つからない CLI があった場合は、スキル側が「`which <tool>` を実行して出力を教えてください」と案内します。
+> 実際に使う CLI だけインストールされていれば十分です。足りない CLI があれば実行中に教えてくれます。
 
 ---
 
@@ -44,15 +65,15 @@ git clone <this-repo-url>
 cd Multi-LLM-Agents-Orchestration
 ```
 
-このディレクトリを Claude Code で開くだけで `/agent-collab` スキルが使えるようになります。
+Claude Code でこのディレクトリを開くだけです。呼び出すまでは何も起きません。
 
 ---
 
 ## 使い方
 
-### Step 1 — タスク文書を書く
+### 1. 作業内容を書く
 
-テンプレートをコピーして中身を記入します:
+テンプレートをコピーして、やりたいことを記入します。
 
 ```bash
 mkdir -p .tmp/agent-collab
@@ -60,59 +81,58 @@ cp .claude/skills/agent-collab/preflight.template.md .tmp/agent-collab/preflight
 # .tmp/agent-collab/preflight.md を編集する
 ```
 
-以下の項目を書いてください:
+以下の項目を書いてください。
 
-| 項目 | 何を書くか |
-| ---- | ---------- |
-| **Goal** | 達成したい結果 |
-| **Scope** | 変更してよい範囲 / 変更してはいけない範囲 |
-| **Acceptance Criteria** | 完了の判定基準（検証可能な形で） |
-| **Verification Commands** | 完了確認のコマンド |
-| **Constraints** | 互換性・性能・締切などの制約 |
+| 項目                      | 内容                                 |
+| ------------------------- | ------------------------------------ |
+| **Goal**                  | 何を達成したいか                     |
+| **Scope**                 | 変えてよいもの・変えてはいけないもの |
+| **Acceptance Criteria**   | 「完了」の判断基準（具体的に）       |
+| **Verification Commands** | 成功を確かめるためのコマンド         |
+| **Constraints**           | 互換性・性能・期日などの制約         |
 
-文書が具体的なほど、アウトプットの品質が上がります。曖昧な目標は曖昧な結果を生みます。
+書いた内容が具体的であるほど、出力の質が上がります。
+面倒であれば、計画をざっくり書き出してから Claude Codeの`plan`モードを使って作成することもできます。
 
-### Step 2 — スキルを呼び出す
+### 2. スキルを呼び出す
 
-Claude Code で以下を入力します:
+Claude Code に次のように入力します。
 
 ```text
 /agent-collab
 ```
 
-Claude Code が preflight 文書を読み、「計画が必要か・実装か・レビューか」を自動で判断してパイプラインを実行します。
+ファイルの内容を読んで、計画・実装・確認のどれが必要かを自動で判断し、処理を開始します。
 
-### Step 3 — 結果を確認する
+工程を指定したい場合は、専用スキルを直接呼ぶか、指示を添えてください。
 
-成果物は `.tmp/agent-collab/<run-id>/` に書き出されます。Claude Code が結果を要約し、失敗があれば原因も伝えます。
+- `/plan-ping-pong` — 計画だけ実行
+- `/impl-pipeline` — 実装だけ実行
+- `/review-pipeline` — 確認だけ実行
+- `/agent-collab` ＋「全部やって」 — 全工程を通して実行
 
----
+### 3. 結果を確かめる
 
-## 自動で行われること
-
-- **パス解決** — NVM や Homebrew など非標準の場所にインストールされた CLI も自動で検出します。見つからない場合は `which <tool>` の実行を案内します。
-- **モード自動判断** — リクエスト内容から `plan` / `impl` / `review` を自動で推定します。
-- **ルーティング** — タスクの規模や種類に応じて適切な CLI が選ばれます。通常は設定不要です。
-
----
-
-## 応用: フェーズを明示的に指定する
-
-特定のフェーズだけを実行したい場合は、スキル呼び出し時に一言添えてください:
-
-| やりたいこと | Claude Code への指示 |
-| ------------ | -------------------- |
-| 計画だけ | `/agent-collab` + *"plan only"* |
-| 承認済み計画を実装 | `/agent-collab` + *"implement the approved plan"* |
-| 成果物をレビュー | `/agent-collab` + *"review the output"* |
-| 全フェーズを一括実行 | `/agent-collab` + *"run all phases"* |
+成果物は `.tmp/agent-collab/<run-id>/` に保存されます。処理の結果は Claude Code が要約して伝えます。何か問題があった場合は、その原因も示します。
 
 ---
 
-## トラブルシューティング
+## 起動後に自動でやってくれること
 
-**CLI が見つからない** — どのバイナリが不足しているか、何を実行すればよいか（`which <tool>`）をスキルが案内します。出力を Claude Code に渡すと自動でリトライします。
+一度スキルを起動すれば、以下は自動で処理されます。
 
-**アウトプットの品質が低い** — 原因のほとんどは preflight 文書の不足です。Acceptance Criteria と Verification Commands を具体的に書き直してください。
+- **CLI の場所の検出** — NVM や Homebrew など非標準の場所にインストールされていても自動で見つけます。見つからない場合は、`which <tool>` の実行を求めることがあります。
+- **使うツールの選択** — 作業の規模や種類を見て、適切なツールを自動で選びます。設定は通常不要です。
+- **セキュリティチェック** — レビュー時に専用のセキュリティ確認を追加できます（設定ファイルの追加は不要）。
+- **プロンプト設定の切り替え** — プロファイルを選んでいる場合、`prompts-src/profiles/` 配下の設定が自動で適用されます。
+- **事前検証** — 実行前に必要なファイルが揃っているかを確認し、不足があれば即停止します。
 
-**タイムアウト** — タスクが大きすぎる可能性があります。タスクを分割するか、スキル呼び出し時にその旨を伝えてください。
+---
+
+## 困ったときは
+
+**CLI が見つからないと言われる** — 不足しているツールの名前と確認手順をスキルが案内します。`which <tool>` の実行結果を貼り付けると、もう一度試みます。
+
+**出力の質が低い** — 作業ファイルの記述が曖昧なことが多いです。「完了の判断基準」と「確認コマンド」を具体的に書き直してみてください。
+
+**処理が止まる・タイムアウトする** — 作業量が多すぎる可能性があります。タスクを小さく分けて試してみてください。
