@@ -1,0 +1,10 @@
+version: 2
+mode: finding-first
+join_barrier: required
+apply_order: sequential
+worker_output_mode: analysis_only
+merge_required: true
+artifacts:
+  findings_dir: review_findings
+  merged: review_merged_findings.json
+  queue: review_fix_queue.json

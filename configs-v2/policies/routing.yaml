@@ -1,0 +1,33 @@
+version: 2
+stop_policy:
+  conditions:
+    - impact_surface: high
+      confidence: low
+      action: STOP_AND_CONFIRM
+    - reason_codes_contain: BLOCK
+      action: STOP_AND_CONFIRM
+    - strict_evidence_violation: true
+      action: STOP_AND_CONFIRM
+  on_stop: write_reason_codes_to_routing_result
+confidence_policy:
+  values:
+    - high
+    - medium
+    - low
+  default: medium
+hard_stop_reason_map:
+  BLOCK_SCOPE_VIOLATION: Requested change exceeds allowed scope
+  BLOCK_MISSING_PLAN: Required plan file not found
+  BLOCK_SESSION_MISMATCH: Session ID mismatch detected
+  BLOCK_SCHEMA_INVALID: Config schema validation failed
+  BLOCK_NO_EVIDENCE: External evidence claim without source
+  ROUTING_NON_DETERMINISTIC: Same input produced different selected_method_ids
+reproducibility_policy:
+  deterministic_required: true
+  on_mismatch: record_ROUTING_NON_DETERMINISTIC_and_stop
+route_decider_policy:
+  phase_prompt_paths:
+    plan: prompts-src/routing/plan-route-decider.md
+    impl: prompts-src/routing/impl-route-decider.md
+    review: prompts-src/routing/review-route-decider.md
+  schema_version: 2

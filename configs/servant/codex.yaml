@@ -21,8 +21,16 @@ purpose_models:
   one_shot: gpt-5.2-codex
 
 purpose_efforts:
-  impl: high
-  review: medium
-  verify: high
-  plan: medium
-  one_shot: medium
+  impl: high # 実装: 複雑なコード生成のため最大推論
+  review: medium # レビュー: 分析タスクのためバランス型
+  verify: high # 検証: 正確性確認のため最大推論
+  plan: medium # 計画: 方針検討のためバランス型
+  one_shot: medium # ワンショット: 単純タスクのためバランス型
+
+# effort_level_descriptions は参照用ドキュメント (runtime では使用されない)
+# 実際の推論強度は stage_efforts (pipeline YAML) > purpose_efforts > wrapper_defaults.effort の順で解決される
+effort_level_descriptions:
+  low: "最小推論。シンプルな検索・確認タスク向け。コスト最小。"
+  medium: "バランス型推論。レビュー・計画・分析タスク向け。コスト中程度。"
+  high: "深い推論。実装・検証タスク向け (推奨デフォルト)。コスト高。"
+  xhigh: "最大推論。特に複雑・曖昧なタスク向け。コスト最大。通常は high で十分。"

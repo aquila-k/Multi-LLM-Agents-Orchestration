@@ -1,0 +1,103 @@
+version: 1
+pipeline: review
+
+default_profile: review_cross
+profiles:
+  review_only:
+    stages:
+      - gemini_review
+    flags:
+      enable_verify: false
+      enable_review: true
+    options:
+      review_mode: cross
+      timeout_mode: wait_done
+    stage_models:
+      gemini_review: pro
+
+  review_cross:
+    stages:
+      - gemini_review
+      - codex_review
+      - copilot_review_consolidate
+    flags:
+      enable_verify: true
+      enable_review: true
+    options:
+      review_mode: cross
+      timeout_mode: wait_done
+    stage_models:
+      gemini_review: pro
+      codex_review: gpt-5.3-codex
+      copilot_review_consolidate: claude-sonnet-4.6
+    stage_efforts:
+      codex_review: high
+
+  post_impl_review:
+    stages:
+      - gemini_review
+      - gemini_test_design
+      - gemini_static_verify
+      - codex_review
+      - codex_test_impl
+      - codex_verify
+    flags:
+      enable_verify: true
+      enable_review: true
+    options:
+      review_mode: cross
+      timeout_mode: wait_done
+    stage_models:
+      gemini_review: pro
+      gemini_test_design: pro
+      gemini_static_verify: flash
+      codex_review: gpt-5.2-codex
+      codex_test_impl: gpt-5.3-codex
+      codex_verify: gpt-5.3-codex
+    stage_efforts:
+      codex_review: medium
+      codex_test_impl: high
+      codex_verify: high
+
+  codex_only:
+    stages:
+      - codex_review
+      - codex_verify
+    flags:
+      enable_verify: true
+      enable_review: true
+    options:
+      review_mode: codex_only
+      timeout_mode: wait_done
+    stage_models:
+      codex_review: gpt-5.2-codex
+      codex_verify: gpt-5.3-codex
+    stage_efforts:
+      codex_review: medium
+      codex_verify: high
+
+  strict_review:
+    # Full parallel review with mandatory security lens.
+    # Use when the implementation touches security-sensitive areas
+    # (auth, crypto, secrets, permissions, infra, etc.) and a thorough
+    # security gate is required before merge.
+    #
+    # Sets security_mode: always so the security lens is always included
+    # regardless of the auto-trigger keyword detection.
+    stages:
+      - gemini_review
+      - codex_review
+      - copilot_review_consolidate
+    flags:
+      enable_verify: true
+      enable_review: true
+    options:
+      review_mode: cross
+      timeout_mode: wait_done
+      security_mode: always
+    stage_models:
+      gemini_review: pro
+      codex_review: gpt-5.3-codex
+      copilot_review_consolidate: claude-sonnet-4.6
+    stage_efforts:
+      codex_review: high

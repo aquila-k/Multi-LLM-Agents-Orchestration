@@ -24,7 +24,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/log.sh"
 
 usage() {
-  cat <<'EOF'
+	cat <<'EOF'
 Usage:
   post_impl_review.sh <context-pack-path> <impl-report-path> [output-dir]
 
@@ -36,21 +36,30 @@ Example:
 EOF
 }
 
-CONTEXT_PACK="${1:-}"
-IMPL_REPORT="${2:-}"
+CONTEXT_PACK="${1-}"
+IMPL_REPORT="${2-}"
 OUTPUT_DIR="${3:-.tmp/post-impl}"
+REVIEW_PROFILE="${4:-post_impl_review}"
 
-if [[ -z "$CONTEXT_PACK" || -z "$IMPL_REPORT" ]]; then
-  usage
-  exit 2
+if [[ -z $CONTEXT_PACK || -z $IMPL_REPORT ]]; then
+	usage
+	exit 2
 fi
-if [[ ! -s "$CONTEXT_PACK" ]]; then
-  log_error "Context pack missing or empty: ${CONTEXT_PACK}"
-  exit 1
+
+case "$REVIEW_PROFILE" in
+post_impl_review | review_cross | review_only | codex_only) ;;
+*)
+	log_error "Unknown review profile: ${REVIEW_PROFILE} (expected: post_impl_review|review_cross|review_only|codex_only)"
+	exit 2
+	;;
+esac
+if [[ ! -s $CONTEXT_PACK ]]; then
+	log_error "Context pack missing or empty: ${CONTEXT_PACK}"
+	exit 1
 fi
-if [[ ! -s "$IMPL_REPORT" ]]; then
-  log_error "Implementation report missing or empty: ${IMPL_REPORT}"
-  exit 1
+if [[ ! -s $IMPL_REPORT ]]; then
+	log_error "Implementation report missing or empty: ${IMPL_REPORT}"
+	exit 1
 fi
 
 TASK_ID="post-impl-$(date +%Y%m%d-%H%M%S)"
@@ -66,7 +75,7 @@ mkdir -p "$ATTACH_DIR" "$OUTPUTS_DIR" "$STATE_DIR" "$DONE_DIR"
 cp "$CONTEXT_PACK" "${INPUTS_DIR}/context_pack.md"
 cp "$IMPL_REPORT" "${ATTACH_DIR}/implementation_report.md"
 
-cat > "${INPUTS_DIR}/user_request.md" <<'EOF'
+cat >"${INPUTS_DIR}/user_request.md" <<'EOF'
 Run a strict post-implementation review and verification workflow.
 
 Primary artifact:
@@ -81,7 +90,8 @@ Required outputs:
 6. Dynamic verification report
 EOF
 
-ACCEPTANCE_COMMANDS_BLOCK=$(python3 - "${INPUTS_DIR}/context_pack.md" <<'PYEOF'
+ACCEPTANCE_COMMANDS_BLOCK=$(
+	python3 - "${INPUTS_DIR}/context_pack.md" <<'PYEOF'
 import json
 import re
 import sys
@@ -126,12 +136,12 @@ else:
 PYEOF
 )
 
-cat > "${TASK_DIR}/manifest.yaml" <<EOF
+cat >"${TASK_DIR}/manifest.yaml" <<EOF
 task_id: "${TASK_ID}"
 goal: "Post-implementation review and verification"
 
 routing:
-  intent: post_impl_review
+  intent: ${REVIEW_PROFILE}
 
 scope:
   allow:
@@ -164,56 +174,96 @@ security:
     - "secrets/"
 EOF
 
-if [[ "$ACCEPTANCE_COMMANDS_BLOCK" == "  commands: []" ]]; then
-  log_warn "No Verify Commands found in context pack; codex_verify gate commands will be skipped."
+if [[ $ACCEPTANCE_COMMANDS_BLOCK == "  commands: []" ]]; then
+	log_warn "No Verify Commands found in context pack; codex_verify gate commands will be skipped."
 fi
 
 log_info "Running post-implementation pipeline in ${TASK_DIR}"
 "${SCRIPT_DIR}/dispatch.sh" pipeline --task "$TASK_DIR" --plan auto
 
-declare -a ARTIFACT_MAP=(
-  "${OUTPUTS_DIR}/gemini_review.gemini.out:${OUTPUT_DIR}/gemini_review.md"
-  "${OUTPUTS_DIR}/gemini_test_design.gemini.out:${OUTPUT_DIR}/test_matrix.md"
-  "${OUTPUTS_DIR}/gemini_static_verify.gemini.out:${OUTPUT_DIR}/verification_checklist.md"
-  "${OUTPUTS_DIR}/codex_review.codex.out:${OUTPUT_DIR}/codex_precision_review.md"
-  "${OUTPUTS_DIR}/codex_test_impl.codex.out:${OUTPUT_DIR}/test_implementation_report.md"
-  "${OUTPUTS_DIR}/codex_verify.codex.out:${OUTPUT_DIR}/verification_report.md"
-)
+declare -a ARTIFACT_MAP=()
+case "$REVIEW_PROFILE" in
+post_impl_review)
+	ARTIFACT_MAP=(
+		"${OUTPUTS_DIR}/gemini_review.gemini.out:${OUTPUT_DIR}/gemini_review.md"
+		"${OUTPUTS_DIR}/gemini_test_design.gemini.out:${OUTPUT_DIR}/test_matrix.md"
+		"${OUTPUTS_DIR}/gemini_static_verify.gemini.out:${OUTPUT_DIR}/verification_checklist.md"
+		"${OUTPUTS_DIR}/codex_review.codex.out:${OUTPUT_DIR}/codex_precision_review.md"
+		"${OUTPUTS_DIR}/codex_test_impl.codex.out:${OUTPUT_DIR}/test_implementation_report.md"
+		"${OUTPUTS_DIR}/codex_verify.codex.out:${OUTPUT_DIR}/verification_report.md"
+	)
+	;;
+review_cross)
+	ARTIFACT_MAP=(
+		"${OUTPUTS_DIR}/gemini_review.gemini.out:${OUTPUT_DIR}/gemini_review.md"
+		"${OUTPUTS_DIR}/codex_review.codex.out:${OUTPUT_DIR}/codex_precision_review.md"
+		"${OUTPUTS_DIR}/copilot_review_consolidate.copilot.out:${OUTPUT_DIR}/review_consolidated.md"
+	)
+	;;
+review_only)
+	ARTIFACT_MAP=(
+		"${OUTPUTS_DIR}/gemini_review.gemini.out:${OUTPUT_DIR}/gemini_review.md"
+	)
+	;;
+codex_only)
+	ARTIFACT_MAP=(
+		"${OUTPUTS_DIR}/codex_review.codex.out:${OUTPUT_DIR}/codex_precision_review.md"
+		"${OUTPUTS_DIR}/codex_verify.codex.out:${OUTPUT_DIR}/verification_report.md"
+	)
+	;;
+esac
 
 for pair in "${ARTIFACT_MAP[@]}"; do
-  src="${pair%%:*}"
-  dst="${pair##*:}"
-  if [[ ! -s "$src" ]]; then
-    log_error "Expected artifact missing or empty: ${src}"
-    exit 1
-  fi
-  cp "$src" "$dst"
+	src="${pair%%:*}"
+	dst="${pair##*:}"
+	if [[ ! -s $src ]]; then
+		log_error "Expected artifact missing or empty: ${src}"
+		exit 1
+	fi
+	cp "$src" "$dst"
 done
 
 if [[ -f "${OUTPUTS_DIR}/_summary.md" ]]; then
-  cp "${OUTPUTS_DIR}/_summary.md" "${OUTPUT_DIR}/dispatch_summary.md"
+	cp "${OUTPUTS_DIR}/_summary.md" "${OUTPUT_DIR}/dispatch_summary.md"
 fi
 
-cat > "${OUTPUT_DIR}/summary.md" <<EOF
+# Write summary.md: use consolidated output if available, else template
+case "$REVIEW_PROFILE" in
+review_cross)
+	if [[ -s "${OUTPUT_DIR}/review_consolidated.md" ]]; then
+		cp "${OUTPUT_DIR}/review_consolidated.md" "${OUTPUT_DIR}/summary.md"
+	fi
+	;;
+review_only)
+	if [[ -s "${OUTPUT_DIR}/gemini_review.md" ]]; then
+		cp "${OUTPUT_DIR}/gemini_review.md" "${OUTPUT_DIR}/summary.md"
+	fi
+	;;
+codex_only)
+	if [[ -s "${OUTPUT_DIR}/codex_precision_review.md" ]]; then
+		cp "${OUTPUT_DIR}/codex_precision_review.md" "${OUTPUT_DIR}/summary.md"
+	fi
+	;;
+esac
+
+if [[ ! -s "${OUTPUT_DIR}/summary.md" ]]; then
+	cat >"${OUTPUT_DIR}/summary.md" <<EOF
 # Post-Implementation Review Summary
 
+Profile: ${REVIEW_PROFILE}
 Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 Task dir: ${TASK_DIR}
 
 ## Artifacts
 
-- ${OUTPUT_DIR}/gemini_review.md
-- ${OUTPUT_DIR}/test_matrix.md
-- ${OUTPUT_DIR}/verification_checklist.md
-- ${OUTPUT_DIR}/codex_precision_review.md
-- ${OUTPUT_DIR}/test_implementation_report.md
-- ${OUTPUT_DIR}/verification_report.md
+$(for pair in "${ARTIFACT_MAP[@]}"; do echo "- ${pair##*:}"; done)
 
 ## Notes
 
 - Raw stage logs and metadata are preserved under: ${TASK_DIR}/outputs
 - Dispatcher summary (if available): ${OUTPUT_DIR}/dispatch_summary.md
 EOF
+fi
 
 log_ok "Post-implementation review complete: ${OUTPUT_DIR}/summary.md"
 exit 0

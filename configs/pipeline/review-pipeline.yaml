@@ -21,17 +21,17 @@ profiles:
       - codex_review
       - copilot_review_consolidate
     flags:
-      enable_verify: false
+      enable_verify: true
       enable_review: true
     options:
       review_mode: cross
       timeout_mode: wait_done
     stage_models:
       gemini_review: pro
-      codex_review: gpt-5.2-codex
-      copilot_review_consolidate: claude-sonnet-4-6
+      codex_review: gpt-5.3-codex
+      copilot_review_consolidate: claude-sonnet-4.6
     stage_efforts:
-      codex_review: medium
+      codex_review: high
 
   post_impl_review:
     stages:
@@ -75,3 +75,21 @@ profiles:
     stage_efforts:
       codex_review: medium
       codex_verify: high
+
+  strict_review:
+    stages:
+      - gemini_review
+      - codex_review
+      - copilot_review_consolidate
+    flags:
+      enable_verify: true
+      enable_review: true
+    options:
+      review_mode: cross
+      timeout_mode: wait_done
+    stage_models:
+      gemini_review: pro
+      codex_review: gpt-5.3-codex
+      copilot_review_consolidate: claude-sonnet-4.6
+    stage_efforts:
+      codex_review: high

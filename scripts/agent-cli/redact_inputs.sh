@@ -17,18 +17,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/log.sh"
 source "${SCRIPT_DIR}/lib/manifest.sh"
 
-INPUT_FILE="${1:-}"
-OUTPUT_FILE="${2:-}"
-MANIFEST_FILE="${3:-}"
+INPUT_FILE="${1-}"
+OUTPUT_FILE="${2-}"
+MANIFEST_FILE="${3-}"
 
-if [[ -z "$INPUT_FILE" || -z "$OUTPUT_FILE" ]]; then
-  echo "Usage: redact_inputs.sh <input-file> <output-file> [manifest-file]" >&2
-  exit 2
+if [[ -z $INPUT_FILE || -z $OUTPUT_FILE ]]; then
+	echo "Usage: redact_inputs.sh <input-file> <output-file> [manifest-file]" >&2
+	exit 2
 fi
 
-if [[ ! -f "$INPUT_FILE" ]]; then
-  log_error "Input file not found: $INPUT_FILE"
-  exit 1
+if [[ ! -f $INPUT_FILE ]]; then
+	log_error "Input file not found: $INPUT_FILE"
+	exit 1
 fi
 
 # Run Python-based redaction (robust regex, handles multiline)

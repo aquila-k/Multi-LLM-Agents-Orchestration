@@ -1,0 +1,12 @@
+version: 2
+strictness: strict
+required_fields:
+  - evidence_id
+  - url
+  - accessed_at
+  - claim_summary
+reason_code_map:
+  WEB_EVIDENCE_MISSING: Finding uses external evidence but evidence_ids is empty
+  WEB_EVIDENCE_UNVERIFIABLE: Referenced evidence_id not found in web-evidence.json
+  WEB_EVIDENCE_STALE: Evidence accessed_at older than allowed threshold
+gate_action_on_violation: reject_and_stop

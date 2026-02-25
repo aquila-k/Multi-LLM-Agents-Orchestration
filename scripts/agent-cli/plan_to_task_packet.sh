@@ -23,7 +23,7 @@ GOAL=""
 ROUTING_INTENT="safe_impl"
 
 usage() {
-  cat <<'EOF'
+	cat <<'EOF'
 Usage: plan_to_task_packet.sh --plan-file <file> --task-dir <dir> --goal <text> [--intent <intent>]
 
 Options:
@@ -35,29 +35,44 @@ EOF
 }
 
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --plan-file) PLAN_FILE="$2"; shift 2 ;;
-    --task-dir) TASK_DIR="$2"; shift 2 ;;
-    --goal) GOAL="$2"; shift 2 ;;
-    --intent) ROUTING_INTENT="$2"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
-    *)
-      log_error "Unknown argument: $1"
-      usage
-      exit 2
-      ;;
-  esac
+	case "$1" in
+	--plan-file)
+		PLAN_FILE="$2"
+		shift 2
+		;;
+	--task-dir)
+		TASK_DIR="$2"
+		shift 2
+		;;
+	--goal)
+		GOAL="$2"
+		shift 2
+		;;
+	--intent)
+		ROUTING_INTENT="$2"
+		shift 2
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		log_error "Unknown argument: $1"
+		usage
+		exit 2
+		;;
+	esac
 done
 
-if [[ -z "$PLAN_FILE" || -z "$TASK_DIR" || -z "$GOAL" ]]; then
-  log_error "--plan-file, --task-dir, and --goal are required"
-  usage
-  exit 2
+if [[ -z $PLAN_FILE || -z $TASK_DIR || -z $GOAL ]]; then
+	log_error "--plan-file, --task-dir, and --goal are required"
+	usage
+	exit 2
 fi
 
-if [[ ! -s "$PLAN_FILE" ]]; then
-  log_error "Plan file not found or empty: $PLAN_FILE"
-  exit 1
+if [[ ! -s $PLAN_FILE ]]; then
+	log_error "Plan file not found or empty: $PLAN_FILE"
+	exit 1
 fi
 
 TASK_ID="$(basename "$TASK_DIR")"
@@ -72,7 +87,7 @@ mkdir -p "$ATTACH_DIR" "$OUTPUTS_DIR" "$STATE_DIR" "$DONE_DIR"
 
 cp "$PLAN_FILE" "${ATTACH_DIR}/implementation_plan.md"
 
-cat > "${INPUTS_DIR}/user_request.md" <<EOF
+cat >"${INPUTS_DIR}/user_request.md" <<EOF
 Implement the approved plan in \`inputs/attachments/implementation_plan.md\`.
 Goal: ${GOAL}
 
@@ -82,7 +97,7 @@ Rules:
 - Prioritize small, verifiable increments.
 EOF
 
-cat > "${INPUTS_DIR}/context_pack.md" <<'EOF'
+cat >"${INPUTS_DIR}/context_pack.md" <<'EOF'
 ## 0. Goal
 Implement the approved execution plan safely and verifiably.
 
@@ -131,7 +146,7 @@ Implement the approved execution plan safely and verifiably.
 |      | Initialized from plan_to_task_packet.sh |
 EOF
 
-cat > "${TASK_DIR}/manifest.yaml" <<EOF
+cat >"${TASK_DIR}/manifest.yaml" <<EOF
 task_id: "${TASK_ID}"
 goal: ${GOAL_YAML}
 

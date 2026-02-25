@@ -10,9 +10,9 @@ import tempfile
 from typing import Any, Dict, List, Tuple
 
 import yaml
-
 from config_validate import (  # type: ignore
     ValidationError,
+    _servant_subdir,
     build_choices_catalog,
     load_and_validate_split_config,
 )
@@ -36,11 +36,11 @@ def _write_atomic(path: str, content: str) -> None:
             pass
 
 
-def _dump_yaml(cfg: Dict[str, Any]) -> str:
+def _dump_yaml(cfg: Dict[str, Any], servant_subdir: str = "servant") -> str:
     header = (
         "# AUTO-GENERATED FILE. DO NOT EDIT.\n"
         "# Runtime source of truth is split config under:\n"
-        "#   - configs/servant/*.yaml\n"
+        f"#   - configs/{servant_subdir}/*.yaml\n"
         "#   - configs/pipeline/*.yaml\n"
         "# This file is a read-only snapshot for humans.\n"
     )
@@ -48,10 +48,14 @@ def _dump_yaml(cfg: Dict[str, Any]) -> str:
     return header + body
 
 
-def _provider_section(tool: str, node: Dict[str, Any]) -> str:
+def _provider_section(
+    tool: str, node: Dict[str, Any], servant_subdir: str = "servant"
+) -> str:
     lines: List[str] = []
     lines.append(f"### `{tool}`")
-    lines.append(f"- Edit file: [configs/servant/{tool}.yaml](servant/{tool}.yaml)")
+    lines.append(
+        f"- Edit file: [configs/{servant_subdir}/{tool}.yaml]({servant_subdir}/{tool}.yaml)"
+    )
     lines.append(f"- `default_model`: `{node['default_model']}`")
     wrapper = node.get("wrapper_defaults") or {}
     lines.append(f"- `wrapper_defaults`: `{json.dumps(wrapper, ensure_ascii=False)}`")
@@ -111,16 +115,19 @@ def _pipeline_section(name: str, node: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _edit_map_rows() -> List[Tuple[str, str]]:
+def _edit_map_rows(servant_subdir: str = "servant") -> List[Tuple[str, str]]:
     return [
-        ("Codex provider settings", "[configs/servant/codex.yaml](servant/codex.yaml)"),
+        (
+            "Codex provider settings",
+            f"[configs/{servant_subdir}/codex.yaml]({servant_subdir}/codex.yaml)",
+        ),
         (
             "Gemini provider settings",
-            "[configs/servant/gemini.yaml](servant/gemini.yaml)",
+            f"[configs/{servant_subdir}/gemini.yaml]({servant_subdir}/gemini.yaml)",
         ),
         (
             "Copilot provider settings",
-            "[configs/servant/copilot.yaml](servant/copilot.yaml)",
+            f"[configs/{servant_subdir}/copilot.yaml]({servant_subdir}/copilot.yaml)",
         ),
         (
             "Impl pipeline profiles/options",
@@ -172,7 +179,7 @@ def _choices_section(choices: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _render_markdown(cfg: Dict[str, Any]) -> str:
+def _render_markdown(cfg: Dict[str, Any], servant_subdir: str = "servant") -> str:
     choices = build_choices_catalog(cfg)
     lines: List[str] = []
     lines.append("# Config State Snapshot")
@@ -183,7 +190,7 @@ def _render_markdown(cfg: Dict[str, Any]) -> str:
         "This document is a read-only view of current effective split configuration."
     )
     lines.append("Runtime source of truth:")
-    lines.append("- `configs/servant/*.yaml`")
+    lines.append(f"- `configs/{servant_subdir}/*.yaml`")
     lines.append("- `configs/pipeline/*.yaml`")
     lines.append("")
     lines.append("Snapshot files:")
@@ -194,7 +201,7 @@ def _render_markdown(cfg: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("| What you want to change | Edit this file |")
     lines.append("| --- | --- |")
-    for k, v in _edit_map_rows():
+    for k, v in _edit_map_rows(servant_subdir):
         lines.append(f"| {k} | {v} |")
     lines.append("")
     lines.append(_choices_section(choices))
@@ -202,7 +209,7 @@ def _render_markdown(cfg: Dict[str, Any]) -> str:
     lines.append("## Current Provider State")
     lines.append("")
     for tool in ("codex", "gemini", "copilot"):
-        lines.append(_provider_section(tool, cfg["servants"][tool]))
+        lines.append(_provider_section(tool, cfg["servants"][tool], servant_subdir))
         lines.append("")
     lines.append("## Current Pipeline State")
     lines.append("")
@@ -235,11 +242,12 @@ def _main() -> int:
     cfg = load_and_validate_split_config(args.config_root)
 
     root = os.path.abspath(args.config_root)
+    servant_subdir = _servant_subdir(root)
     yaml_out = args.yaml_out or os.path.join(root, "config-state.yaml")
     md_out = args.md_out or os.path.join(root, "config-state.md")
 
-    _write_atomic(yaml_out, _dump_yaml(cfg))
-    _write_atomic(md_out, _render_markdown(cfg))
+    _write_atomic(yaml_out, _dump_yaml(cfg, servant_subdir))
+    _write_atomic(md_out, _render_markdown(cfg, servant_subdir))
     for legacy in ("orchestrator.yaml", "orchestrator.md"):
         legacy_path = os.path.join(root, legacy)
         if os.path.exists(legacy_path):

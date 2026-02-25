@@ -19,17 +19,17 @@ source "${SCRIPT_DIR}/lib/atomic.sh"
 
 MAX_LINES_PER_SECTION=40
 
-INPUT_FILE="${1:-}"
-OUTPUT_FILE="${2:-}"
+INPUT_FILE="${1-}"
+OUTPUT_FILE="${2-}"
 
-if [[ -z "$INPUT_FILE" || -z "$OUTPUT_FILE" ]]; then
-  echo "Usage: make_digest.sh <context-pack.md> <output-digest.md>" >&2
-  exit 1
+if [[ -z $INPUT_FILE || -z $OUTPUT_FILE ]]; then
+	echo "Usage: make_digest.sh <context-pack.md> <output-digest.md>" >&2
+	exit 1
 fi
 
-if [[ ! -f "$INPUT_FILE" ]]; then
-  log_error "Context pack not found: $INPUT_FILE"
-  exit 1
+if [[ ! -f $INPUT_FILE ]]; then
+	log_error "Context pack not found: $INPUT_FILE"
+	exit 1
 fi
 
 python3 - "$INPUT_FILE" "$OUTPUT_FILE" "$MAX_LINES_PER_SECTION" <<'PYEOF'
@@ -128,5 +128,5 @@ with open(partial, 'w', encoding='utf-8') as f:
 os.replace(partial, output_file)
 PYEOF
 
-log_info "Digest created: $(basename "$OUTPUT_FILE") ($(wc -l < "$OUTPUT_FILE") lines)"
+log_info "Digest created: $(basename "$OUTPUT_FILE") ($(wc -l <"$OUTPUT_FILE") lines)"
 exit 0

@@ -65,7 +65,9 @@ def _plan_stage_purpose(stage: str) -> str:
     return "plan"
 
 
-def _find_pipeline_for_profile_name(cfg: Dict[str, Any], profile_name: str) -> Optional[str]:
+def _find_pipeline_for_profile_name(
+    cfg: Dict[str, Any], profile_name: str
+) -> Optional[str]:
     for pipeline in ("impl", "review"):
         if profile_name in cfg["pipelines"][pipeline]["profiles"]:
             return pipeline
@@ -75,7 +77,9 @@ def _find_pipeline_for_profile_name(cfg: Dict[str, Any], profile_name: str) -> O
 def _base_profile_from_intent(cfg: Dict[str, Any], intent: str) -> Tuple[str, str]:
     pipeline = _find_pipeline_for_profile_name(cfg, intent)
     if pipeline is None:
-        raise ValidationError(f"routing.intent '{intent}' is not defined in pipelines.impl/review")
+        raise ValidationError(
+            f"routing.intent '{intent}' is not defined in pipelines.impl/review"
+        )
     return pipeline, intent
 
 
@@ -88,7 +92,9 @@ def _merge_dict(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
 def _profile_data(cfg: Dict[str, Any], pipeline: str, profile: str) -> Dict[str, Any]:
     profiles = cfg["pipelines"][pipeline]["profiles"]
     if profile not in profiles:
-        raise ValidationError(f"pipeline '{pipeline}' does not define profile '{profile}'")
+        raise ValidationError(
+            f"pipeline '{pipeline}' does not define profile '{profile}'"
+        )
     node = profiles[profile]
     return {
         "stages": list(node.get("stages") or []),
@@ -99,7 +105,9 @@ def _profile_data(cfg: Dict[str, Any], pipeline: str, profile: str) -> Dict[str,
     }
 
 
-def _apply_dispatch_flag_filters(stages: List[str], flags: Dict[str, bool]) -> List[str]:
+def _apply_dispatch_flag_filters(
+    stages: List[str], flags: Dict[str, bool]
+) -> List[str]:
     out = list(stages)
     if flags.get("enable_brief") is False:
         out = [s for s in out if not s.endswith("_brief")]
@@ -110,7 +118,9 @@ def _apply_dispatch_flag_filters(stages: List[str], flags: Dict[str, bool]) -> L
     return out
 
 
-def _resolve_tool_models(cfg: Dict[str, Any], manifest: Optional[Dict[str, Any]]) -> Dict[str, str]:
+def _resolve_tool_models(
+    cfg: Dict[str, Any], manifest: Optional[Dict[str, Any]]
+) -> Dict[str, str]:
     models: Dict[str, str] = {}
     for tool in SERVANT_NAMES:
         models[tool] = cfg["servants"][tool]["default_model"]
@@ -193,14 +203,18 @@ def resolve_dispatch(
     runtime_flags = _merge_dict(profile_runtime["flags"], flags_override)
     runtime_options = _merge_dict(profile_runtime["options"], options_override)
 
-    unsupported_flags = sorted(set(runtime_flags.keys()) - DISPATCH_ALLOWED_FLAGS[pipeline])
+    unsupported_flags = sorted(
+        set(runtime_flags.keys()) - DISPATCH_ALLOWED_FLAGS[pipeline]
+    )
     if unsupported_flags:
         raise ValidationError(
             f"pipeline '{pipeline}' does not support flags: {', '.join(unsupported_flags)}"
         )
 
     if pipeline == "impl":
-        unsupported = sorted(set(runtime_options.keys()) - {"impl_mode", "timeout_mode"})
+        unsupported = sorted(
+            set(runtime_options.keys()) - {"impl_mode", "timeout_mode"}
+        )
         if unsupported:
             raise ValidationError(
                 f"pipeline '{pipeline}' does not support options: {', '.join(unsupported)}"
@@ -213,7 +227,10 @@ def resolve_dispatch(
             selected_profile = "one_shot_impl"
 
     if pipeline == "review":
-        unsupported = sorted(set(runtime_options.keys()) - {"review_mode", "timeout_mode"})
+        unsupported = sorted(
+            set(runtime_options.keys())
+            - {"review_mode", "timeout_mode", "security_mode"}
+        )
         if unsupported:
             raise ValidationError(
                 f"pipeline '{pipeline}' does not support options: {', '.join(unsupported)}"
@@ -238,7 +255,10 @@ def resolve_dispatch(
     codex_purpose_efforts = _resolve_codex_purpose_efforts(cfg)
     wrapper_defaults = _resolve_tool_wrapper_defaults(cfg)
     timeout_mode_override = runtime_options.get("timeout_mode")
-    if timeout_mode_override is not None and timeout_mode_override not in TIMEOUT_MODE_VALUES:
+    if (
+        timeout_mode_override is not None
+        and timeout_mode_override not in TIMEOUT_MODE_VALUES
+    ):
         raise ValidationError(
             f"pipeline '{pipeline}' timeout_mode='{timeout_mode_override}' is invalid"
         )
@@ -289,7 +309,9 @@ def resolve_dispatch(
                 f"servants.{tool}.wrapper_defaults.timeout_ms must be a non-negative integer"
             )
 
-        stage_timeout_mode = timeout_mode_override or wrapper_defaults.get(tool, {}).get("timeout_mode")
+        stage_timeout_mode = timeout_mode_override or wrapper_defaults.get(
+            tool, {}
+        ).get("timeout_mode")
         if stage_timeout_mode not in TIMEOUT_MODE_VALUES:
             raise ValidationError(
                 f"resolved timeout_mode '{stage_timeout_mode}' is invalid for stage '{stage_name}'"
@@ -348,26 +370,31 @@ def resolve_plan_pipeline(
     codex_purpose_efforts = _resolve_codex_purpose_efforts(cfg)
     wrapper_defaults = _resolve_tool_wrapper_defaults(cfg)
     timeout_mode_override = options.get("timeout_mode")
-    if timeout_mode_override is not None and timeout_mode_override not in TIMEOUT_MODE_VALUES:
-        raise ValidationError(f"plan profile '{profile_name}' timeout_mode='{timeout_mode_override}' is invalid")
+    if (
+        timeout_mode_override is not None
+        and timeout_mode_override not in TIMEOUT_MODE_VALUES
+    ):
+        raise ValidationError(
+            f"plan profile '{profile_name}' timeout_mode='{timeout_mode_override}' is invalid"
+        )
 
     for tool, model in model_overrides.items():
         if model is None:
             continue
         allowed = cfg["servants"][tool]["allowed_models"]
         if model not in allowed:
-            raise ValidationError(f"CLI override model '{model}' is not allowed for {tool}")
+            raise ValidationError(
+                f"CLI override model '{model}' is not allowed for {tool}"
+            )
         tool_models[tool] = model
 
     for stage_name, stage_model in profile_stage_models.items():
-        if stage_name == "stage1" or stage_name == "stage4":
-            tool = "copilot"
-        elif stage_name.startswith("stage2_codex") or stage_name.startswith("stage3_codex"):
-            tool = "codex"
-        elif stage_name.startswith("stage2_gemini") or stage_name.startswith("stage3_gemini"):
-            tool = "gemini"
-        else:
-            raise ValidationError(f"plan profile stage_models has unknown key '{stage_name}'")
+        try:
+            tool = _stage_tool(stage_name)
+        except ValidationError:
+            raise ValidationError(
+                f"plan profile stage_models has unknown key '{stage_name}'"
+            )
         allowed = cfg["servants"][tool]["allowed_models"]
         if stage_model not in allowed:
             raise ValidationError(
@@ -375,24 +402,28 @@ def resolve_plan_pipeline(
             )
 
     for stage_name, stage_effort in profile_stage_efforts.items():
-        if stage_name.startswith("stage2_codex") or stage_name.startswith("stage3_codex"):
-            tool = "codex"
-        else:
+        try:
+            tool = _stage_tool(stage_name)
+        except ValidationError:
             raise ValidationError(
                 f"plan profile stage_efforts.{stage_name} is only supported for codex stages"
             )
-        if tool != "codex" or stage_effort not in CODEX_EFFORT_VALUES:
+        if tool != "codex":
+            raise ValidationError(
+                f"plan profile stage_efforts.{stage_name} is only supported for codex stages"
+            )
+        if stage_effort not in CODEX_EFFORT_VALUES:
             raise ValidationError(
                 f"plan profile '{profile_name}' stage_efforts.{stage_name}='{stage_effort}' is invalid"
             )
 
     stage_order = [
-        "stage1",
-        "stage2_codex",
-        "stage2_gemini",
-        "stage3_codex_review",
-        "stage3_gemini_review",
-        "stage4",
+        "copilot_draft",
+        "codex_enrich",
+        "gemini_enrich",
+        "codex_cross_review",
+        "gemini_cross_review",
+        "copilot_consolidate",
     ]
 
     stage_models: Dict[str, str] = {}
@@ -400,12 +431,7 @@ def resolve_plan_pipeline(
     stage_timeout_ms: Dict[str, int] = {}
     stage_timeout_modes: Dict[str, str] = {}
     for stage_name in stage_order:
-        if stage_name == "stage1" or stage_name == "stage4":
-            tool = "copilot"
-        elif stage_name.startswith("stage2_codex") or stage_name.startswith("stage3_codex"):
-            tool = "codex"
-        else:
-            tool = "gemini"
+        tool = _stage_tool(stage_name)
 
         # CLI model override is the strongest signal for plan pipeline runs.
         stage_model = model_overrides.get(tool)
@@ -426,7 +452,9 @@ def resolve_plan_pipeline(
                 f"servants.{tool}.wrapper_defaults.timeout_ms must be a non-negative integer"
             )
 
-        stage_timeout_mode = timeout_mode_override or wrapper_defaults.get(tool, {}).get("timeout_mode")
+        stage_timeout_mode = timeout_mode_override or wrapper_defaults.get(
+            tool, {}
+        ).get("timeout_mode")
         if stage_timeout_mode not in TIMEOUT_MODE_VALUES:
             raise ValidationError(
                 f"resolved timeout_mode '{stage_timeout_mode}' is invalid for plan stage '{stage_name}'"
@@ -464,7 +492,11 @@ def _main() -> int:
     sub = parser.add_subparsers(dest="mode", required=True)
 
     def add_source_args(p: argparse.ArgumentParser) -> None:
-        p.add_argument("--config-root", required=True, help="Path to configs directory containing servant/ and pipeline/")
+        p.add_argument(
+            "--config-root",
+            required=True,
+            help="Path to configs directory containing servant/ and pipeline/",
+        )
 
     p_dispatch = sub.add_parser("dispatch", help="Resolve config for dispatch.sh")
     add_source_args(p_dispatch)
@@ -489,7 +521,9 @@ def _main() -> int:
             if manifest is None:
                 raise ValidationError("manifest is required for dispatch resolution")
             validate_manifest_extensions(cfg, manifest, manifest_path=args.manifest)
-            resolved = resolve_dispatch(cfg, manifest, args.plan_name, args.intent_default)
+            resolved = resolve_dispatch(
+                cfg, manifest, args.plan_name, args.intent_default
+            )
         else:
             model_overrides = {
                 "copilot": args.copilot_model,

@@ -1,0 +1,30 @@
+version: 2
+tool: copilot
+default_model: claude-sonnet-4.6
+allowed_models:
+  - auto
+  - claude-sonnet-4.6
+  - claude-opus-4.6
+  - claude-sonnet-4.5
+  - claude-opus-4.5
+  - claude-haiku-4.5
+  - gpt-5-codex
+  - gpt-5.2-codex
+  - gpt-5.1-codex
+  - gpt-5.1-codex-mini
+  - GPT-5-mini
+wrapper_defaults:
+  timeout_ms: 600000
+  timeout_mode: wait_done
+purpose_models:
+  impl: claude-sonnet-4.6
+  review: claude-opus-4.6
+  verify: claude-sonnet-4.6
+  plan: claude-sonnet-4.6
+  one_shot: claude-sonnet-4.6
+  smoke_test: GPT-5-mini
+  cheap_test: claude-haiku-4.5
+web_capabilities:
+  modes:
+    - "off"
+    - copilot_mcp

@@ -1,0 +1,227 @@
+# AUTO-GENERATED FILE. DO NOT EDIT.
+# Runtime source of truth is split config under:
+#   - configs/servants/*.yaml
+#   - configs/pipeline/*.yaml
+# This file is a read-only snapshot for humans.
+version: 1
+servants:
+  codex:
+    default_model: gpt-5.3-codex
+    allowed_models:
+      - gpt-5.3-codex
+      - gpt-5.2-codex
+      - gpt-5-codex
+      - gpt-5.3-codex-spark
+    wrapper_defaults:
+      effort: high
+      timeout_ms: 600000
+      timeout_mode: wait_done
+    purpose_models:
+      impl: gpt-5.3-codex
+      review: gpt-5.2-codex
+      verify: gpt-5.3-codex
+      plan: gpt-5.3-codex
+      one_shot: gpt-5.2-codex
+    purpose_efforts:
+      impl: high
+      review: medium
+      verify: high
+      plan: medium
+      one_shot: medium
+  gemini:
+    default_model: pro
+    allowed_models:
+      - auto
+      - pro
+      - flash
+      - flash-lite
+      - gemini-2.5-pro
+      - gemini-2.5-flash
+      - gemini-2.5-flash-lite
+      - gemini-3-pro-preview
+    wrapper_defaults:
+      approval_mode: default
+      sandbox: false
+      timeout_ms: 600000
+      timeout_mode: wait_done
+    purpose_models:
+      impl: pro
+      review: pro
+      verify: flash
+      plan: pro
+      one_shot: flash
+    purpose_efforts: {}
+  copilot:
+    default_model: claude-sonnet-4.6
+    allowed_models:
+      - auto
+      - claude-sonnet-4.6
+      - claude-opus-4.6
+      - claude-sonnet-4.5
+      - claude-opus-4.5
+      - gpt-5-codex
+      - gpt-5.2-codex
+      - gpt-5.1-codex
+      - gpt-5.1-codex-mini
+    wrapper_defaults:
+      timeout_ms: 600000
+      timeout_mode: wait_done
+    purpose_models:
+      impl: claude-sonnet-4.6
+      review: claude-opus-4.6
+      verify: claude-sonnet-4.6
+      plan: claude-sonnet-4.6
+      one_shot: claude-sonnet-4.6
+    purpose_efforts: {}
+pipelines:
+  impl:
+    default_profile: safe_impl
+    profiles:
+      safe_impl:
+        stages:
+          - gemini_brief
+          - codex_impl
+          - codex_verify
+          - gemini_review
+        flags:
+          enable_brief: true
+          enable_verify: true
+          enable_review: true
+        options:
+          impl_mode: safe
+          timeout_mode: wait_done
+        stage_models:
+          gemini_brief: pro
+          codex_impl: gpt-5.3-codex
+          codex_verify: gpt-5.3-codex
+          gemini_review: pro
+        stage_efforts:
+          codex_impl: high
+          codex_verify: high
+      one_shot_impl:
+        stages:
+          - gemini_brief
+          - copilot_runbook
+          - codex_verify
+        flags:
+          enable_brief: true
+          enable_verify: true
+          enable_review: false
+        options:
+          impl_mode: one_shot
+          timeout_mode: wait_done
+        stage_models:
+          gemini_brief: flash
+          copilot_runbook: claude-opus-4.6
+          codex_verify: gpt-5.3-codex
+        stage_efforts:
+          codex_verify: medium
+      design_only:
+        stages:
+          - gemini_brief
+          - gemini_test_design
+          - gemini_review
+        flags:
+          enable_brief: true
+          enable_verify: false
+          enable_review: true
+        options:
+          impl_mode: safe
+          timeout_mode: wait_done
+        stage_models:
+          gemini_brief: pro
+          gemini_test_design: pro
+          gemini_review: pro
+  review:
+    default_profile: review_cross
+    profiles:
+      review_only:
+        stages:
+          - gemini_review
+        flags:
+          enable_verify: false
+          enable_review: true
+        options:
+          review_mode: cross
+          timeout_mode: wait_done
+        stage_models:
+          gemini_review: pro
+      review_cross:
+        stages:
+          - gemini_review
+          - codex_review
+          - copilot_review_consolidate
+        flags:
+          enable_verify: true
+          enable_review: true
+        options:
+          review_mode: cross
+          timeout_mode: wait_done
+        stage_models:
+          gemini_review: pro
+          codex_review: gpt-5.3-codex
+          copilot_review_consolidate: claude-sonnet-4.6
+        stage_efforts:
+          codex_review: high
+      post_impl_review:
+        stages:
+          - gemini_review
+          - gemini_test_design
+          - gemini_static_verify
+          - codex_review
+          - codex_test_impl
+          - codex_verify
+        flags:
+          enable_verify: true
+          enable_review: true
+        options:
+          review_mode: cross
+          timeout_mode: wait_done
+        stage_models:
+          gemini_review: pro
+          gemini_test_design: pro
+          gemini_static_verify: flash
+          codex_review: gpt-5.2-codex
+          codex_test_impl: gpt-5.3-codex
+          codex_verify: gpt-5.3-codex
+        stage_efforts:
+          codex_review: medium
+          codex_test_impl: high
+          codex_verify: high
+      codex_only:
+        stages:
+          - codex_review
+          - codex_verify
+        flags:
+          enable_verify: true
+          enable_review: true
+        options:
+          review_mode: codex_only
+          timeout_mode: wait_done
+        stage_models:
+          codex_review: gpt-5.2-codex
+          codex_verify: gpt-5.3-codex
+        stage_efforts:
+          codex_review: medium
+          codex_verify: high
+  plan:
+    default_profile: standard
+    profiles:
+      standard:
+        flags:
+          enable_stage2_codex: true
+          enable_stage2_gemini: true
+          enable_stage3_cross_review: true
+        options:
+          consolidate_mode: standard
+          timeout_mode: wait_done
+        stage_models:
+          stage1: claude-sonnet-4.6
+          stage2_codex: gpt-5.3-codex
+          stage2_gemini: pro
+          stage3_codex_review: gpt-5.2-codex
+          stage3_gemini_review: pro
+          stage4: claude-sonnet-4.6
+        stage_efforts:
+          stage2_codex: medium
+          stage3_codex_review: medium

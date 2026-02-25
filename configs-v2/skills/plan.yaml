@@ -1,0 +1,98 @@
+version: 2
+skill: plan
+default_method_ids:
+  - PLAN-METHOD-A
+methods:
+  PLAN-METHOD-A:
+    enabled: true
+    steps:
+      - parse_task
+      - gemini_draft
+      - codex_analyze
+      - copilot_analyze
+      - synthesize
+      - copilot_draft
+      - finalize
+    allowed_tools:
+      - gemini
+      - copilot
+    gate_profile: standard
+  PLAN-METHOD-B:
+    enabled: true
+    steps:
+      - parse_task
+      - gemini_draft
+      - codex_analyze
+      - copilot_analyze
+      - synthesize
+      - codex_enrich
+      - gemini_research
+      - finalize
+    allowed_tools:
+      - gemini
+      - codex
+      - copilot
+    gate_profile: standard
+  PLAN-METHOD-HYBRID:
+    enabled: true
+    steps:
+      - parse_task
+      - gemini_draft
+      - codex_analyze
+      - copilot_analyze
+      - synthesize
+      - codex_enrich
+      - gemini_research
+      - copilot_draft
+      - finalize
+    allowed_tools:
+      - gemini
+      - codex
+      - copilot
+    gate_profile: strict
+step_defaults:
+  parse_task:
+    description: Parse and organize task requirements (Gemini)
+    default_tool: gemini
+    default_mode: normal
+    web_research_mode: "off"
+  gemini_draft:
+    description: Generate initial plan draft (Gemini)
+    default_tool: gemini
+    default_mode: normal
+    web_research_mode: "off"
+  codex_analyze:
+    description: Analyze feasibility and technical constraints (Codex, web search enabled)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: codex_explicit
+  copilot_analyze:
+    description: Gather supplementary analysis and references (Copilot, MCP tools enabled)
+    default_tool: copilot
+    default_mode: normal
+    web_research_mode: copilot_mcp
+  synthesize:
+    description: Merge and review analysis results from multiple agents (Gemini)
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"
+  codex_enrich:
+    description: Enrich plan with technical details and refinements (Codex, web search enabled)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: codex_explicit
+  gemini_research:
+    description: Gather up-to-date information via web research (Gemini)
+    default_tool: gemini
+    default_mode: normal
+    web_research_mode: gemini_auto
+  copilot_draft:
+    description: Generate plan draft (Copilot, MCP tools enabled)
+    default_tool: copilot
+    default_mode: normal
+    web_research_mode: copilot_mcp
+  finalize:
+    description: Produce and format the final plan document (Gemini)
+    default_tool: gemini
+    default_mode: normal
+    web_research_mode: "off"

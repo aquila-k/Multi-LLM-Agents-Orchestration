@@ -16,7 +16,11 @@ SERVANT_NAMES = ("codex", "gemini", "copilot")
 PIPELINE_FLAGS = {
     "impl": {"enable_brief", "enable_verify", "enable_review"},
     "review": {"enable_verify", "enable_review"},
-    "plan": {"enable_stage2_codex", "enable_stage2_gemini", "enable_stage3_cross_review"},
+    "plan": {
+        "enable_codex_enrich",
+        "enable_gemini_enrich",
+        "enable_cross_review",
+    },
 }
 
 PIPELINE_OPTIONS = {
@@ -45,12 +49,12 @@ GEMINI_APPROVAL_VALUES = {"default", "auto_edit", "yolo"}
 TIMEOUT_MODE_VALUES = {"enforce", "wait_done"}
 
 PLAN_STAGE_TOOL = {
-    "stage1": "copilot",
-    "stage2_codex": "codex",
-    "stage2_gemini": "gemini",
-    "stage3_codex_review": "codex",
-    "stage3_gemini_review": "gemini",
-    "stage4": "copilot",
+    "copilot_draft": "copilot",
+    "codex_enrich": "codex",
+    "gemini_enrich": "gemini",
+    "codex_cross_review": "codex",
+    "gemini_cross_review": "gemini",
+    "copilot_consolidate": "copilot",
 }
 
 SERVANT_FILES = {
@@ -117,7 +121,9 @@ def _stage_to_tool(stage: str, pipeline_name: str) -> Optional[str]:
     return tool if tool in SERVANT_NAMES else None
 
 
-def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") -> Dict[str, Any]:
+def validate_runtime_config_dict(
+    cfg: Dict[str, Any], cfg_path: str = "config"
+) -> Dict[str, Any]:
     _ensure_keys(cfg, {"version", "servants", "pipelines"}, cfg_path)
 
     version = cfg.get("version")
@@ -133,15 +139,26 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
         _expect_type(node, dict, f"{cfg_path}.servants.{servant}")
         _ensure_keys(
             node,
-            {"default_model", "allowed_models", "wrapper_defaults", "purpose_models", "purpose_efforts"},
+            {
+                "default_model",
+                "allowed_models",
+                "wrapper_defaults",
+                "purpose_models",
+                "purpose_efforts",
+            },
             f"{cfg_path}.servants.{servant}",
         )
 
         default_model = node.get("default_model")
         if not isinstance(default_model, str) or not default_model.strip():
-            _die(f"{cfg_path}.servants.{servant}.default_model", "must be a non-empty string")
+            _die(
+                f"{cfg_path}.servants.{servant}.default_model",
+                "must be a non-empty string",
+            )
 
-        allowed_models = _expect_str_set(node.get("allowed_models"), f"{cfg_path}.servants.{servant}.allowed_models")
+        allowed_models = _expect_str_set(
+            node.get("allowed_models"), f"{cfg_path}.servants.{servant}.allowed_models"
+        )
         if default_model not in allowed_models:
             _die(
                 f"{cfg_path}.servants.{servant}.default_model",
@@ -149,9 +166,17 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
             )
 
         wrapper_defaults = node.get("wrapper_defaults")
-        _expect_type(wrapper_defaults, dict, f"{cfg_path}.servants.{servant}.wrapper_defaults")
-        _ensure_keys(wrapper_defaults, WRAPPER_DEFAULT_KEYS[servant], f"{cfg_path}.servants.{servant}.wrapper_defaults")
-        missing_wrapper_keys = sorted(WRAPPER_DEFAULT_KEYS[servant] - set(wrapper_defaults.keys()))
+        _expect_type(
+            wrapper_defaults, dict, f"{cfg_path}.servants.{servant}.wrapper_defaults"
+        )
+        _ensure_keys(
+            wrapper_defaults,
+            WRAPPER_DEFAULT_KEYS[servant],
+            f"{cfg_path}.servants.{servant}.wrapper_defaults",
+        )
+        missing_wrapper_keys = sorted(
+            WRAPPER_DEFAULT_KEYS[servant] - set(wrapper_defaults.keys())
+        )
         if missing_wrapper_keys:
             _die(
                 f"{cfg_path}.servants.{servant}.wrapper_defaults",
@@ -164,19 +189,30 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                     _die(key_path, "must be a non-negative integer")
             elif key == "timeout_mode":
                 if not isinstance(raw, str) or raw not in TIMEOUT_MODE_VALUES:
-                    _die(key_path, f"must be one of: {', '.join(sorted(TIMEOUT_MODE_VALUES))}")
+                    _die(
+                        key_path,
+                        f"must be one of: {', '.join(sorted(TIMEOUT_MODE_VALUES))}",
+                    )
             elif servant == "codex" and key == "effort":
                 if not isinstance(raw, str) or raw not in CODEX_EFFORT_VALUES:
-                    _die(key_path, f"must be one of: {', '.join(sorted(CODEX_EFFORT_VALUES))}")
+                    _die(
+                        key_path,
+                        f"must be one of: {', '.join(sorted(CODEX_EFFORT_VALUES))}",
+                    )
             elif servant == "gemini" and key == "approval_mode":
                 if not isinstance(raw, str) or raw not in GEMINI_APPROVAL_VALUES:
-                    _die(key_path, f"must be one of: {', '.join(sorted(GEMINI_APPROVAL_VALUES))}")
+                    _die(
+                        key_path,
+                        f"must be one of: {', '.join(sorted(GEMINI_APPROVAL_VALUES))}",
+                    )
             elif servant == "gemini" and key == "sandbox":
                 if not isinstance(raw, bool):
                     _die(key_path, "must be boolean")
 
         purpose_models = node.get("purpose_models") or {}
-        _expect_type(purpose_models, dict, f"{cfg_path}.servants.{servant}.purpose_models")
+        _expect_type(
+            purpose_models, dict, f"{cfg_path}.servants.{servant}.purpose_models"
+        )
         _ensure_keys(
             purpose_models,
             {"impl", "review", "verify", "plan", "one_shot"},
@@ -195,7 +231,9 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                 )
 
         purpose_efforts = node.get("purpose_efforts") or {}
-        _expect_type(purpose_efforts, dict, f"{cfg_path}.servants.{servant}.purpose_efforts")
+        _expect_type(
+            purpose_efforts, dict, f"{cfg_path}.servants.{servant}.purpose_efforts"
+        )
         if servant != "codex" and purpose_efforts:
             _die(
                 f"{cfg_path}.servants.{servant}.purpose_efforts",
@@ -220,16 +258,26 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
     for pipeline_name in ("impl", "review", "plan"):
         pipeline = pipelines.get(pipeline_name)
         _expect_type(pipeline, dict, f"{cfg_path}.pipelines.{pipeline_name}")
-        _ensure_keys(pipeline, {"default_profile", "profiles"}, f"{cfg_path}.pipelines.{pipeline_name}")
+        _ensure_keys(
+            pipeline,
+            {"default_profile", "profiles"},
+            f"{cfg_path}.pipelines.{pipeline_name}",
+        )
 
         default_profile = pipeline.get("default_profile")
         if not isinstance(default_profile, str) or not default_profile.strip():
-            _die(f"{cfg_path}.pipelines.{pipeline_name}.default_profile", "must be a non-empty string")
+            _die(
+                f"{cfg_path}.pipelines.{pipeline_name}.default_profile",
+                "must be a non-empty string",
+            )
 
         profiles = pipeline.get("profiles")
         _expect_type(profiles, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles")
         if not profiles:
-            _die(f"{cfg_path}.pipelines.{pipeline_name}.profiles", "must define at least one profile")
+            _die(
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles",
+                "must define at least one profile",
+            )
         if default_profile not in profiles:
             _die(
                 f"{cfg_path}.pipelines.{pipeline_name}.default_profile",
@@ -237,7 +285,11 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
             )
 
         for profile_name, profile in profiles.items():
-            _expect_type(profile, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}")
+            _expect_type(
+                profile,
+                dict,
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}",
+            )
             _ensure_keys(
                 profile,
                 {"stages", "flags", "options", "stage_models", "stage_efforts"},
@@ -268,7 +320,11 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                 )
 
             flags = profile.get("flags") or {}
-            _expect_type(flags, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.flags")
+            _expect_type(
+                flags,
+                dict,
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.flags",
+            )
             _ensure_keys(
                 flags,
                 PIPELINE_FLAGS[pipeline_name],
@@ -282,7 +338,11 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                     )
 
             options = profile.get("options") or {}
-            _expect_type(options, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.options")
+            _expect_type(
+                options,
+                dict,
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.options",
+            )
             _ensure_keys(
                 options,
                 PIPELINE_OPTIONS[pipeline_name].keys(),
@@ -302,7 +362,11 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                     )
 
             stage_models = profile.get("stage_models") or {}
-            _expect_type(stage_models, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.stage_models")
+            _expect_type(
+                stage_models,
+                dict,
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.stage_models",
+            )
             for stage_name, model in stage_models.items():
                 if not isinstance(model, str) or not model.strip():
                     _die(
@@ -323,7 +387,11 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
                     )
 
             stage_efforts = profile.get("stage_efforts") or {}
-            _expect_type(stage_efforts, dict, f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.stage_efforts")
+            _expect_type(
+                stage_efforts,
+                dict,
+                f"{cfg_path}.pipelines.{pipeline_name}.profiles.{profile_name}.stage_efforts",
+            )
             for stage_name, effort in stage_efforts.items():
                 if not isinstance(effort, str) or effort not in CODEX_EFFORT_VALUES:
                     _die(
@@ -345,7 +413,14 @@ def validate_runtime_config_dict(cfg: Dict[str, Any], cfg_path: str = "config") 
     return cfg
 
 
-def _normalize_servant_file(raw: Dict[str, Any], servant: str, path: str) -> Dict[str, Any]:
+def _normalize_servant_file(
+    raw: Dict[str, Any], servant: str, path: str
+) -> Dict[str, Any]:
+    # "full format" keys: version 1 (legacy) + version 2 extension fields.
+    # web_capabilities and purpose_* are each optional in the opposite schema
+    # version, allowing a single servant file to satisfy both the v1 runtime
+    # (config_resolve.py needs purpose_models/purpose_efforts) and the v2
+    # validator (config_validate_v2.py needs web_capabilities).
     full_keys = {
         "version",
         "tool",
@@ -354,6 +429,8 @@ def _normalize_servant_file(raw: Dict[str, Any], servant: str, path: str) -> Dic
         "wrapper_defaults",
         "purpose_models",
         "purpose_efforts",
+        "web_capabilities",  # v2 extension — optional, ignored by v1 runtime
+        "effort_level_descriptions",  # documentation only — optional, ignored by runtime
     }
     compact_keys = {
         "default_model",
@@ -365,8 +442,9 @@ def _normalize_servant_file(raw: Dict[str, Any], servant: str, path: str) -> Dic
 
     if "version" in raw or "tool" in raw:
         _ensure_keys(raw, full_keys, path)
-        if raw.get("version") != 1:
-            _die(f"{path}.version", "must be 1")
+        version = raw.get("version")
+        if version not in (1, 2):
+            _die(f"{path}.version", "must be 1 or 2")
         if raw.get("tool") != servant:
             _die(f"{path}.tool", f"must be '{servant}'")
         return {
@@ -381,7 +459,9 @@ def _normalize_servant_file(raw: Dict[str, Any], servant: str, path: str) -> Dic
     return dict(raw)
 
 
-def _normalize_pipeline_file(raw: Dict[str, Any], pipeline: str, path: str) -> Dict[str, Any]:
+def _normalize_pipeline_file(
+    raw: Dict[str, Any], pipeline: str, path: str
+) -> Dict[str, Any]:
     full_keys = {"version", "pipeline", "default_profile", "profiles"}
     compact_keys = {"default_profile", "profiles"}
 
@@ -400,13 +480,26 @@ def _normalize_pipeline_file(raw: Dict[str, Any], pipeline: str, path: str) -> D
     return dict(raw)
 
 
+def _servant_subdir(root: str) -> str:
+    """Return the servant config subdirectory name for the given config root.
+
+    Prefers "servants/" (canonical v2 name) over "servant/" (v1 legacy name).
+    This mirrors the lookup logic in config.sh::_servant_dir() so that the
+    validator and the runtime always agree on which directory is authoritative.
+    """
+    if os.path.isdir(os.path.join(root, "servants")):
+        return "servants"
+    return "servant"
+
+
 def load_and_validate_split_config(config_root: str) -> Dict[str, Any]:
     root = os.path.abspath(config_root)
+    servant_subdir = _servant_subdir(root)
     servants: Dict[str, Any] = {}
     pipelines: Dict[str, Any] = {}
 
-    for servant, (subdir, filename) in SERVANT_FILES.items():
-        path = os.path.join(root, subdir, filename)
+    for servant, (_, filename) in SERVANT_FILES.items():
+        path = os.path.join(root, servant_subdir, filename)
         raw = _load_yaml(path)
         servants[servant] = _normalize_servant_file(raw, servant, path)
 
@@ -432,7 +525,9 @@ def _pipeline_name_for_intent(cfg: Dict[str, Any], intent: str) -> Optional[str]
 
 
 def validate_manifest_extensions(
-    cfg: Dict[str, Any], manifest: Optional[Dict[str, Any]], manifest_path: str = "manifest"
+    cfg: Dict[str, Any],
+    manifest: Optional[Dict[str, Any]],
+    manifest_path: str = "manifest",
 ) -> None:
     if not manifest:
         return
@@ -443,7 +538,9 @@ def validate_manifest_extensions(
     if routing and not isinstance(routing, dict):
         _die(f"{manifest_path}.routing", "must be a mapping")
     if routing:
-        _ensure_keys(routing, {"intent", "model", "pipeline"}, f"{manifest_path}.routing")
+        _ensure_keys(
+            routing, {"intent", "model", "pipeline"}, f"{manifest_path}.routing"
+        )
 
     if "intent" in routing and not isinstance(routing["intent"], str):
         _die(f"{manifest_path}.routing.intent", "must be a string")
@@ -454,7 +551,10 @@ def validate_manifest_extensions(
         _ensure_keys(model_map, set(SERVANT_NAMES), f"{manifest_path}.routing.model")
         for servant, model in model_map.items():
             if not isinstance(model, str) or not model.strip():
-                _die(f"{manifest_path}.routing.model.{servant}", "must be a non-empty string")
+                _die(
+                    f"{manifest_path}.routing.model.{servant}",
+                    "must be a non-empty string",
+                )
             allowed = cfg["servants"][servant]["allowed_models"]
             if model not in allowed:
                 _die(
@@ -465,12 +565,19 @@ def validate_manifest_extensions(
     pipeline = routing.get("pipeline") or {}
     if pipeline:
         _expect_type(pipeline, dict, f"{manifest_path}.routing.pipeline")
-        _ensure_keys(pipeline, {"profile", "flags", "options"}, f"{manifest_path}.routing.pipeline")
+        _ensure_keys(
+            pipeline,
+            {"profile", "flags", "options"},
+            f"{manifest_path}.routing.pipeline",
+        )
 
         profile = pipeline.get("profile")
         if profile is not None:
             if not isinstance(profile, str) or not profile.strip():
-                _die(f"{manifest_path}.routing.pipeline.profile", "must be a non-empty string")
+                _die(
+                    f"{manifest_path}.routing.pipeline.profile",
+                    "must be a non-empty string",
+                )
 
         flags = pipeline.get("flags") or {}
         _expect_type(flags, dict, f"{manifest_path}.routing.pipeline.flags")
@@ -478,7 +585,10 @@ def validate_manifest_extensions(
         _ensure_keys(flags, all_flags, f"{manifest_path}.routing.pipeline.flags")
         for flag_name, flag_val in flags.items():
             if not isinstance(flag_val, bool):
-                _die(f"{manifest_path}.routing.pipeline.flags.{flag_name}", "must be boolean")
+                _die(
+                    f"{manifest_path}.routing.pipeline.flags.{flag_name}",
+                    "must be boolean",
+                )
 
         options = pipeline.get("options") or {}
         _expect_type(options, dict, f"{manifest_path}.routing.pipeline.options")
@@ -486,10 +596,15 @@ def validate_manifest_extensions(
         allowed_options = {}
         for opt_map in PIPELINE_OPTIONS.values():
             allowed_options.update(opt_map)
-        _ensure_keys(options, allowed_options.keys(), f"{manifest_path}.routing.pipeline.options")
+        _ensure_keys(
+            options, allowed_options.keys(), f"{manifest_path}.routing.pipeline.options"
+        )
         for opt_name, opt_val in options.items():
             if not isinstance(opt_val, str):
-                _die(f"{manifest_path}.routing.pipeline.options.{opt_name}", "must be string")
+                _die(
+                    f"{manifest_path}.routing.pipeline.options.{opt_name}",
+                    "must be string",
+                )
             if opt_val not in allowed_options[opt_name]:
                 _die(
                     f"{manifest_path}.routing.pipeline.options.{opt_name}",
@@ -501,7 +616,10 @@ def validate_manifest_extensions(
             group = _pipeline_name_for_intent(cfg, intent)
             if group is not None:
                 profile_name = pipeline.get("profile")
-                if profile_name and profile_name not in cfg["pipelines"][group]["profiles"]:
+                if (
+                    profile_name
+                    and profile_name not in cfg["pipelines"][group]["profiles"]
+                ):
                     _die(
                         f"{manifest_path}.routing.pipeline.profile",
                         f"profile '{profile_name}' is not defined in pipelines.{group}.profiles",
@@ -532,7 +650,9 @@ def build_choices_catalog(cfg: Dict[str, Any]) -> Dict[str, Any]:
             tool: {
                 "default_model": cfg["servants"][tool]["default_model"],
                 "allowed_models": list(cfg["servants"][tool]["allowed_models"]),
-                "wrapper_defaults": dict(cfg["servants"][tool].get("wrapper_defaults") or {}),
+                "wrapper_defaults": dict(
+                    cfg["servants"][tool].get("wrapper_defaults") or {}
+                ),
                 "wrapper_allowed_keys": sorted(WRAPPER_DEFAULT_KEYS[tool]),
             }
             for tool in SERVANT_NAMES
@@ -541,8 +661,14 @@ def build_choices_catalog(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _main() -> int:
-    parser = argparse.ArgumentParser(description="Validate split config and optional manifest extensions")
-    parser.add_argument("--config-root", required=True, help="Path to configs directory containing servant/ and pipeline/")
+    parser = argparse.ArgumentParser(
+        description="Validate split config and optional manifest extensions"
+    )
+    parser.add_argument(
+        "--config-root",
+        required=True,
+        help="Path to configs directory containing servant/ and pipeline/",
+    )
     parser.add_argument("--manifest", help="Optional path to manifest.yaml")
     parser.add_argument(
         "--print-choices",
@@ -554,7 +680,9 @@ def _main() -> int:
     try:
         cfg = load_and_validate_split_config(args.config_root)
         manifest = load_manifest_if_present(args.manifest)
-        validate_manifest_extensions(cfg, manifest, manifest_path=args.manifest or "manifest")
+        validate_manifest_extensions(
+            cfg, manifest, manifest_path=args.manifest or "manifest"
+        )
     except ValidationError as e:
         print(f"CONFIG VALIDATION ERROR: {e}", file=sys.stderr)
         return 1

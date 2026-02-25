@@ -1,0 +1,117 @@
+version: 2
+skill: impl
+default_method_ids:
+  - IMPL-PROFILE-SAFE
+methods:
+  IMPL-PROFILE-SAFE:
+    enabled: true
+    steps:
+      - read_context
+      - research
+      - implement
+      - review_draft
+      - fix
+      - summarize
+    allowed_tools:
+      - gemini
+      - codex
+    gate_profile: standard
+  IMPL-PROFILE-ONE_SHOT:
+    enabled: true
+    steps:
+      - read_context
+      - research
+      - implement
+      - review_draft
+      - fix
+      - summarize
+    allowed_tools:
+      - gemini
+      - copilot
+      - codex
+    gate_profile: standard
+  IMPL-PROFILE-DESIGN_ONLY:
+    enabled: true
+    steps:
+      - read_context
+      - research
+      - implement
+      - summarize
+    allowed_tools:
+      - gemini
+    gate_profile: minimal
+  IMPL-S1:
+    enabled: true
+    steps:
+      - implement
+    allowed_tools:
+      - codex
+    gate_profile: standard
+  IMPL-S2:
+    enabled: true
+    steps:
+      - implement
+    allowed_tools:
+      - gemini
+    gate_profile: standard
+  IMPL-S3:
+    enabled: true
+    steps:
+      - implement
+    allowed_tools:
+      - copilot
+    gate_profile: standard
+  IMPL-S4:
+    enabled: true
+    steps:
+      - implement
+      - fix
+    allowed_tools:
+      - codex
+      - gemini
+    gate_profile: strict
+  IMPL-S5:
+    enabled: true
+    steps:
+      - implement
+      - verify
+      - fix
+    allowed_tools:
+      - codex
+    gate_profile: strict
+step_defaults:
+  read_context:
+    description: Load existing code and specifications as context (Gemini)
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"
+  research:
+    description: Gather reference materials and prior implementations via web search (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: codex_explicit
+  implement:
+    description: Code implementation — main step (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: codex_explicit
+  review_draft:
+    description: Self-review of implementation — detect bugs and oversights (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: "off"
+  fix:
+    description: Apply fixes for review findings (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: "off"
+  verify:
+    description: Final validation and test execution (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: "off"
+  summarize:
+    description: Generate implementation summary and changelist (Gemini)
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"

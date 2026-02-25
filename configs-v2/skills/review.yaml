@@ -1,0 +1,152 @@
+version: 2
+skill: review
+default_method_ids:
+  - REVIEW-MODE-A
+  - REVIEW-PRESET-STANDARD
+  - REVIEW-PROFILE-REVIEW_ONLY
+methods:
+  REVIEW-MODE-A:
+    enabled: true
+    steps:
+      - read_context
+      - gemini_review_web
+      - gemini_review
+      - codex_review_web
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+      - copilot
+    gate_profile: finding-first
+  REVIEW-MODE-B:
+    enabled: true
+    steps:
+      - read_context
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+    gate_profile: standard
+  REVIEW-PRESET-LITE:
+    enabled: true
+    steps:
+      - read_context
+      - apply_fixes
+      - consolidate
+    allowed_tools:
+      - gemini
+    gate_profile: minimal
+  REVIEW-PRESET-STANDARD:
+    enabled: true
+    steps:
+      - read_context
+      - gemini_review_web
+      - gemini_review
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+    gate_profile: standard
+  REVIEW-PRESET-STRICT:
+    enabled: true
+    steps:
+      - read_context
+      - gemini_review_web
+      - gemini_review
+      - codex_review_web
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+      - copilot
+    gate_profile: strict
+  REVIEW-PROFILE-REVIEW_CROSS:
+    enabled: true
+    steps:
+      - read_context
+      - gemini_review_web
+      - gemini_review
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+      - copilot
+    gate_profile: standard
+  REVIEW-PROFILE-POST_IMPL_REVIEW:
+    enabled: true
+    steps:
+      - read_context
+      - gemini_review_web
+      - gemini_review
+      - codex_review_web
+      - apply_fixes
+      - verify
+      - consolidate
+    allowed_tools:
+      - gemini
+      - codex
+    gate_profile: standard
+  REVIEW-PROFILE-REVIEW_ONLY:
+    enabled: true
+    steps:
+      - read_context
+      - apply_fixes
+      - consolidate
+    allowed_tools:
+      - gemini
+    gate_profile: minimal
+  REVIEW-PROFILE-CODEX_ONLY:
+    enabled: true
+    steps:
+      - read_context
+      - apply_fixes
+      - consolidate
+    allowed_tools:
+      - codex
+    gate_profile: minimal
+step_defaults:
+  read_context:
+    description: Load reviewed code and implementation summary as context (Gemini)
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"
+  gemini_review_web:
+    description: Gemini review — reference latest best practices via web search
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: gemini_auto
+  gemini_review:
+    description: Gemini standard review — evaluate code quality, design, and security
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"
+  codex_review_web:
+    description: Codex review — evaluate with implementation pattern references via web search
+    default_tool: codex
+    default_mode: analysis_only
+    web_research_mode: codex_explicit
+  apply_fixes:
+    description: Apply fixes for review findings (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: "off"
+  verify:
+    description: Post-fix validation and test execution (Codex)
+    default_tool: codex
+    default_mode: normal
+    web_research_mode: "off"
+  consolidate:
+    description: Merge all review results and produce final report (Gemini)
+    default_tool: gemini
+    default_mode: analysis_only
+    web_research_mode: "off"

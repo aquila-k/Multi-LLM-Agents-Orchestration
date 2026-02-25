@@ -48,7 +48,7 @@ Snapshot files:
 
 - `impl`: `["enable_brief", "enable_review", "enable_verify"]`
 - `review`: `["enable_review", "enable_verify"]`
-- `plan`: `["enable_stage2_codex", "enable_stage2_gemini", "enable_stage3_cross_review"]`
+- `plan`: `["enable_codex_enrich", "enable_cross_review", "enable_gemini_enrich"]`
 
 ## Current Provider State
 
@@ -99,24 +99,25 @@ Snapshot files:
 ### `copilot`
 
 - Edit file: [configs/servant/copilot.yaml](servant/copilot.yaml)
-- `default_model`: `claude-sonnet-4-6`
+- `default_model`: `claude-sonnet-4.6`
 - `wrapper_defaults`: `{"timeout_ms": 600000, "timeout_mode": "wait_done"}`
 - `allowed_models`:
   - `auto`
-  - `claude-sonnet-4-6`
-  - `claude-opus-4-6`
-  - `claude-sonnet-4-5`
-  - `claude-opus-4-5`
+  - `claude-haiku-4.5`
+  - `claude-sonnet-4.6`
+  - `claude-opus-4.6`
+  - `claude-sonnet-4.5`
+  - `claude-opus-4.5`
   - `gpt-5-codex`
   - `gpt-5.2-codex`
   - `gpt-5.1-codex`
   - `gpt-5.1-codex-mini`
 - `purpose_models`:
-  - `impl` -> `claude-sonnet-4-6`
-  - `review` -> `claude-opus-4-6`
-  - `verify` -> `claude-sonnet-4-6`
-  - `plan` -> `claude-sonnet-4-6`
-  - `one_shot` -> `claude-sonnet-4-6`
+  - `impl` -> `claude-sonnet-4.6`
+  - `review` -> `claude-opus-4.6`
+  - `verify` -> `claude-sonnet-4.6`
+  - `plan` -> `claude-sonnet-4.6`
+  - `one_shot` -> `claude-sonnet-4.6`
 
 ## Current Pipeline State
 
@@ -146,7 +147,7 @@ Snapshot files:
 - `options`: `{"impl_mode": "one_shot", "timeout_mode": "wait_done"}`
 - `stage_models`:
   - `gemini_brief` -> `flash`
-  - `copilot_runbook` -> `claude-sonnet-4-6`
+  - `copilot_runbook` -> `claude-opus-4.6`
   - `codex_verify` -> `gpt-5.3-codex`
 - `stage_efforts`:
   - `codex_verify` -> `medium`
@@ -177,14 +178,14 @@ Snapshot files:
 #### `review_cross`
 
 - `stages`: `["gemini_review", "codex_review", "copilot_review_consolidate"]`
-- `flags`: `{"enable_verify": false, "enable_review": true}`
+- `flags`: `{"enable_verify": true, "enable_review": true}`
 - `options`: `{"review_mode": "cross", "timeout_mode": "wait_done"}`
 - `stage_models`:
   - `gemini_review` -> `pro`
-  - `codex_review` -> `gpt-5.2-codex`
-  - `copilot_review_consolidate` -> `claude-sonnet-4-6`
+  - `codex_review` -> `gpt-5.3-codex`
+  - `copilot_review_consolidate` -> `claude-sonnet-4.6`
 - `stage_efforts`:
-  - `codex_review` -> `medium`
+  - `codex_review` -> `high`
 
 #### `post_impl_review`
 
@@ -215,6 +216,18 @@ Snapshot files:
   - `codex_review` -> `medium`
   - `codex_verify` -> `high`
 
+#### `strict_review`
+
+- `stages`: `["gemini_review", "codex_review", "copilot_review_consolidate"]`
+- `flags`: `{"enable_verify": true, "enable_review": true}`
+- `options`: `{"review_mode": "cross", "timeout_mode": "wait_done"}`
+- `stage_models`:
+  - `gemini_review` -> `pro`
+  - `codex_review` -> `gpt-5.3-codex`
+  - `copilot_review_consolidate` -> `claude-sonnet-4.6`
+- `stage_efforts`:
+  - `codex_review` -> `high`
+
 ### `plan`
 
 - Edit file: [configs/pipeline/plan-pipeline.yaml](pipeline/plan-pipeline.yaml)
@@ -222,18 +235,18 @@ Snapshot files:
 
 #### `standard`
 
-- `flags`: `{"enable_stage2_codex": true, "enable_stage2_gemini": true, "enable_stage3_cross_review": true}`
+- `flags`: `{"enable_codex_enrich": true, "enable_gemini_enrich": true, "enable_cross_review": true}`
 - `options`: `{"consolidate_mode": "standard", "timeout_mode": "wait_done"}`
 - `stage_models`:
-  - `stage1` -> `claude-sonnet-4-6`
-  - `stage2_codex` -> `gpt-5.3-codex`
-  - `stage2_gemini` -> `pro`
-  - `stage3_codex_review` -> `gpt-5.2-codex`
-  - `stage3_gemini_review` -> `pro`
-  - `stage4` -> `claude-sonnet-4-6`
+  - `copilot_draft` -> `claude-sonnet-4.6`
+  - `codex_enrich` -> `gpt-5.3-codex`
+  - `gemini_enrich` -> `pro`
+  - `codex_cross_review` -> `gpt-5.2-codex`
+  - `gemini_cross_review` -> `pro`
+  - `copilot_consolidate` -> `claude-sonnet-4.6`
 - `stage_efforts`:
-  - `stage2_codex` -> `medium`
-  - `stage3_codex_review` -> `medium`
+  - `codex_enrich` -> `medium`
+  - `codex_cross_review` -> `medium`
 
 ## Validation Command
 
