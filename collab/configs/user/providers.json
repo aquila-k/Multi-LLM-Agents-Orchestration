@@ -1,0 +1,18 @@
+{
+  "$schema": "../schemas/providers.schema.json",
+  "version": 1,
+  "providers": {
+    "codex": {
+      "model": "gpt-5.4",
+      "effort": "high"
+    },
+    "copilot": {
+      "model": "claude-sonnet-4.6",
+      "effort": "xhigh"
+    },
+    "gemini": {
+      "model": "flash",
+      "effort": "high"
+    }
+  }
+}

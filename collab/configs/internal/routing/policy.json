@@ -1,0 +1,90 @@
+{
+  "policy": "routing",
+  "metricRange": {
+    "min": 0,
+    "max": 5
+  },
+  "phases": {
+    "plan": {
+      "weights": {
+        "capabilityFit": 2,
+        "contextFit": 1,
+        "toolFit": 1,
+        "sessionFit": 2,
+        "outputDisciplineFit": 1,
+        "evidenceFit": 3,
+        "reliabilityFit": 2,
+        "costFit": 1,
+        "latencyFit": 1,
+        "mergeFit": 1
+      },
+      "thresholds": {
+        "minimumNormalizedScore": 60,
+        "tieDelta": 5,
+        "dualRunDelta": 8
+      }
+    },
+    "impl": {
+      "weights": {
+        "capabilityFit": 3,
+        "contextFit": 3,
+        "toolFit": 3,
+        "sessionFit": 2,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 1,
+        "reliabilityFit": 3,
+        "costFit": 1,
+        "latencyFit": 1,
+        "mergeFit": 2
+      },
+      "thresholds": {
+        "minimumNormalizedScore": 60,
+        "tieDelta": 5,
+        "dualRunDelta": 8
+      }
+    },
+    "review": {
+      "weights": {
+        "capabilityFit": 2,
+        "contextFit": 2,
+        "toolFit": 1,
+        "sessionFit": 1,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 3,
+        "reliabilityFit": 3,
+        "costFit": 1,
+        "latencyFit": 1,
+        "mergeFit": 3
+      },
+      "thresholds": {
+        "minimumNormalizedScore": 60,
+        "tieDelta": 5,
+        "dualRunDelta": 8
+      }
+    },
+    "harden": {
+      "weights": {
+        "capabilityFit": 3,
+        "contextFit": 2,
+        "toolFit": 2,
+        "sessionFit": 1,
+        "outputDisciplineFit": 2,
+        "evidenceFit": 3,
+        "reliabilityFit": 3,
+        "costFit": 1,
+        "latencyFit": 1,
+        "mergeFit": 2
+      },
+      "thresholds": {
+        "minimumNormalizedScore": 60,
+        "tieDelta": 5,
+        "dualRunDelta": 8
+      }
+    }
+  },
+  "penaltyWeights": {
+    "normalizationBurden": 2,
+    "providerUncertainty": 3,
+    "knownBadPenalty": 4
+  }
+}

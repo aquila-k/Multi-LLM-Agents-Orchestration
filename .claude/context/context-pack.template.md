@@ -1,0 +1,1 @@
+../../agent-collab/context/context-pack.template.md

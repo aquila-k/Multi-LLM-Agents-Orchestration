@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["decision"],
+  "properties": {
+    "decision": { "type": "string" },
+    "context": { "type": "string" },
+    "alternatives_considered": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reason": { "type": "string" },
+    "impact": { "type": "string" },
+    "actor": { "type": "string" },
+    "effective_scope": { "type": "string" }
+  },
+  "additionalProperties": true
+}

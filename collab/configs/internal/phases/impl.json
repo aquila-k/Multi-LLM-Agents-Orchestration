@@ -1,0 +1,18 @@
+{
+  "phase": "impl",
+  "defaultStrategyId": "COLLAB_IMPL_PATCH_FIRST",
+  "autoAdvanceDefault": false,
+  "allowWithHarden": false,
+  "candidateProfiles": [
+    "impl-codex-primary",
+    "impl-gemini-primary",
+    "impl-copilot-primary"
+  ],
+  "resumeRequiredCapabilities": [
+    {
+      "key": "session.resume",
+      "high_impact": true
+    }
+  ],
+  "composition": {}
+}

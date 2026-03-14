@@ -1,0 +1,43 @@
+{
+  "provider": "copilot",
+  "command": "copilot",
+  "defaultModelRef": "copilot-primary",
+  "validationModelRef": "copilot-free",
+  "modelAliases": {
+    "copilot-primary": "claude-sonnet-4.6",
+    "copilot-cheap": "claude-haiku-4.5",
+    "copilot-free": "gpt-5-mini"
+  },
+  "defaultOptions": {
+    "reasoningEffort": "xhigh"
+  },
+  "supportedOptionKeys": ["model", "reasoningEffort", "timeoutMs"],
+  "liveExecFlags": {
+    "promptFlag": "-p",
+    "silentFlag": "--silent",
+    "allowAllToolsFlag": "--allow-all-tools",
+    "noAskUserFlag": "--no-ask-user",
+    "modelFlag": "--model",
+    "resumeFlag": "--resume",
+    "continueFlag": "--continue",
+    "noColorFlag": "--no-color"
+  },
+  "capabilityRefs": [
+    "session.resume",
+    "output.plain_text",
+    "execution.working_dir_persistence"
+  ],
+  "declaredCapabilities": {
+    "session.resume": "declared",
+    "output.plain_text": "declared",
+    "execution.working_dir_persistence": "declared"
+  },
+  "timeoutDefaults": {
+    "defaultMs": 600000,
+    "stallMs": 300000
+  },
+  "retryDefaults": {
+    "transient": 3,
+    "timeout": 2
+  }
+}

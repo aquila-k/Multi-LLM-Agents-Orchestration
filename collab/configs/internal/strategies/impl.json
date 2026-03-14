@@ -1,0 +1,347 @@
+{
+  "strategies": [
+    {
+      "strategyId": "COLLAB_IMPL_BATCH_SHOT",
+      "slug": "impl.batch-shot",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 4,
+      "estimatedCallsMax": 6,
+      "requiresBudgetConfirm": false,
+      "preferredOutputMode": "full_file",
+      "selectionGuidance": [
+        "use for isolated new code generation where one-shot output is efficient"
+      ],
+      "steps": [
+        {
+          "id": "I0_scope",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I1_batch_generate",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I2_verify",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_IMPL_PATCH_FIRST_NO_GEMINI",
+      "slug": "impl.patch-first-no-gemini",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 5,
+      "estimatedCallsMax": 7,
+      "requiresBudgetConfirm": false,
+      "preferredOutputMode": "patch",
+      "selectionGuidance": [
+        "patch-first using only codex and copilot (no gemini)"
+      ],
+      "steps": [
+        {
+          "id": "I0_analyze",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": ["plans/"],
+            "onMissingRequired": "skip"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I2_generate",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": ["plans/"],
+            "onMissingRequired": "skip"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I4_gate",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "skip"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I5_shield",
+          "agentProfile": "impl-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "skip"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_IMPL_PATCH_FIRST",
+      "slug": "impl.patch-first",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 5,
+      "estimatedCallsMax": 7,
+      "requiresBudgetConfirm": false,
+      "preferredOutputMode": "patch",
+      "selectionGuidance": [
+        "default strategy for bounded changes to existing files"
+      ],
+      "steps": [
+        {
+          "id": "I0_analyze",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": ["plans/"],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I2_generate",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": ["plans/"],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I4_gate",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": ["plans/"],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I5_shield",
+          "agentProfile": "impl-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": ["plans/"],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_IMPL_SPEC_PATCH",
+      "slug": "impl.spec-patch",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 4,
+      "estimatedCallsDefault": 6,
+      "estimatedCallsMax": 8,
+      "requiresBudgetConfirm": false,
+      "preferredOutputMode": "patch",
+      "selectionGuidance": [
+        "use when acceptance boundaries must be locked before patch generation"
+      ],
+      "steps": [
+        {
+          "id": "I0_spec_lock",
+          "agentProfile": "impl-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I1_patch",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I2_verify",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_IMPL_FILE_BY_FILE",
+      "slug": "impl.file-by-file",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 4,
+      "estimatedCallsDefault": 7,
+      "estimatedCallsMax": 10,
+      "requiresBudgetConfirm": true,
+      "preferredOutputMode": "mixed",
+      "selectionGuidance": [
+        "use for broader generation that benefits from staged file-by-file convergence"
+      ],
+      "steps": [
+        {
+          "id": "I0_partition",
+          "agentProfile": "impl-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I1_file_pass",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I2_converge",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_IMPL_SHIELD_FIX",
+      "slug": "impl.shield-fix",
+      "phase": "impl",
+      "enabled": true,
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 3,
+      "estimatedCallsMax": 5,
+      "requiresBudgetConfirm": false,
+      "preferredOutputMode": "patch",
+      "selectionGuidance": [
+        "use only as remediation after a gate or validation failure"
+      ],
+      "steps": [
+        {
+          "id": "I0_shield_diagnose",
+          "agentProfile": "impl-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "I1_shield_fix",
+          "agentProfile": "impl-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    }
+  ]
+}

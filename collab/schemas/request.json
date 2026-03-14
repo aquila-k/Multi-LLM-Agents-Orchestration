@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collab/schemas/request.json",
+  "title": "Collab Canonical Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "source",
+    "workflow_intent",
+    "summary",
+    "targets",
+    "constraints",
+    "output",
+    "artifacts",
+    "operator_context",
+    "phase_options",
+    "selectors",
+    "assembly_options",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["markdown", "json"]
+        }
+      }
+    },
+    "workflow_intent": {
+      "type": "string",
+      "enum": ["plan", "impl", "review", "harden", "resume"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "globs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hard": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "soft": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        },
+        "approvals_required": {
+          "type": "array",
+          "items": {
+            "$ref": "approval-request.json"
+          },
+          "default": []
+        },
+        "disallowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": []
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preferred_mode", "allowed_modes", "operations_required"],
+      "properties": {
+        "preferred_mode": {
+          "$ref": "#/$defs/outputMode"
+        },
+        "allowed_modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/outputMode"
+          }
+        },
+        "operations_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_root",
+        "intake_dir",
+        "request_dir",
+        "response_dir",
+        "state_dir"
+      ],
+      "properties": {
+        "task_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intake_dir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request_dir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_dir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state_dir": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "operator_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_by": {
+          "type": "string"
+        },
+        "session_hint": {
+          "type": "string"
+        },
+        "approval_mode": {
+          "type": "string",
+          "enum": ["fail_closed", "continue_if_approved"]
+        }
+      }
+    },
+    "phase_options": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["with_harden", "auto_advance", "budget_profile_ref"],
+      "properties": {
+        "with_harden": {
+          "type": "boolean"
+        },
+        "auto_advance": {
+          "type": "boolean"
+        },
+        "budget_profile_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "selectors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["plan", "impl", "review", "harden"]
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "step": {
+          "type": "string"
+        },
+        "resume_from": {
+          "type": "string"
+        },
+        "approval_continuation": {
+          "type": "string"
+        }
+      }
+    },
+    "assembly_options": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt_version", "schema_version", "concise_shell_summary"],
+      "properties": {
+        "prompt_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concise_shell_summary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at", "source_canonicalized_at", "host", "cwd"],
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_canonicalized_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "outputMode": {
+      "type": "string",
+      "enum": [
+        "patch",
+        "create_file",
+        "full_file",
+        "mixed",
+        "rename_file",
+        "delete_file",
+        "binary_patch",
+        "report_only"
+      ]
+    }
+  }
+}

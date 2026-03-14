@@ -1,0 +1,50 @@
+{
+  "provider": "codex",
+  "command": "codex",
+  "mutationCapabilities": {
+    "directWriteSupported": true,
+    "allowlistEnforceable": true
+  },
+  "defaultModelRef": "codex-primary",
+  "validationModelRef": "codex-fast-verify",
+  "modelAliases": {
+    "codex-primary": "gpt-5.3-codex",
+    "codex-fast-verify": "gpt-5.1-codex-mini"
+  },
+  "defaultOptions": {
+    "reasoningEffort": "medium"
+  },
+  "validationOptions": {
+    "reasoningEffort": "low"
+  },
+  "supportedOptionKeys": ["model", "reasoningEffort", "timeoutMs"],
+  "liveExecFlags": {
+    "stdinPrompt": true,
+    "stdinFlag": "-",
+    "outputLastMessageFlag": "--output-last-message",
+    "sandboxFlag": "--sandbox",
+    "defaultSandbox": "read-only",
+    "bypassApprovalFlag": "--dangerously-bypass-approvals-and-sandbox",
+    "modelFlag": "--model",
+    "resumeSubcommand": ["exec", "resume"],
+    "resumeLastFlag": "--last"
+  },
+  "capabilityRefs": [
+    "session.resume",
+    "output.json_schema",
+    "execution.working_dir_persistence"
+  ],
+  "declaredCapabilities": {
+    "session.resume": "declared",
+    "output.json_schema": "declared",
+    "execution.working_dir_persistence": "declared"
+  },
+  "timeoutDefaults": {
+    "defaultMs": 600000,
+    "stallMs": 300000
+  },
+  "retryDefaults": {
+    "transient": 3,
+    "timeout": 2
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collab/schemas/apply-result.json",
+  "title": "Collab Apply Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "result",
+    "applied_operations",
+    "blocked_reasons",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "applied",
+        "blocked_for_approval",
+        "blocked_for_conflict",
+        "blocked_for_scope",
+        "blocked_for_fingerprint",
+        "blocked_for_budget",
+        "denied_by_policy",
+        "blocked_for_review"
+      ]
+    },
+    "applied_operations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "blocked_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "reason": {
+      "type": "string"
+    },
+    "approvalRequestRef": {
+      "type": "string"
+    },
+    "dangerous_operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_id",
+          "operation_type",
+          "requires_explicit_approval"
+        ],
+        "properties": {
+          "operation_id": {
+            "type": "string"
+          },
+          "operation_type": {
+            "type": "string"
+          },
+          "target_path": {
+            "type": "string"
+          },
+          "requires_explicit_approval": {
+            "type": "boolean"
+          }
+        }
+      },
+      "default": []
+    },
+    "checkpoint_ref": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at"],
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "normalized_ref": {
+          "type": "string"
+        },
+        "validation_ref": {
+          "type": "string"
+        },
+        "operator_decision_ref": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid strategy IDs and step IDs per phase. Used for validation and IDE hints.",
+  "phases": {
+    "impl": {
+      "COLLAB_IMPL_BATCH_SHOT": ["I0_scope", "I1_batch_generate", "I2_verify"],
+      "COLLAB_IMPL_PATCH_FIRST": [
+        "I0_analyze",
+        "I2_generate",
+        "I4_gate",
+        "I5_shield"
+      ],
+      "COLLAB_IMPL_SPEC_PATCH": ["I0_spec_lock", "I1_patch", "I2_verify"],
+      "COLLAB_IMPL_FILE_BY_FILE": [
+        "I0_partition",
+        "I1_file_pass",
+        "I2_converge"
+      ],
+      "COLLAB_IMPL_SHIELD_FIX": ["I0_shield_diagnose", "I1_shield_fix"]
+    },
+    "plan": {
+      "COLLAB_PLAN_QUESTIONS_ONLY": ["P0_questions", "P1_question_summary"],
+      "COLLAB_PLAN_MINIMAL": ["P0_quick_survey", "P1_minimal_plan"],
+      "COLLAB_PLAN_FULL": [
+        "P1_preflight_questions",
+        "R0_repo_survey",
+        "FINAL_plan"
+      ],
+      "COLLAB_PLAN_THOROUGH": [
+        "P0_risk_scan",
+        "P1_parallel_enrich",
+        "P2_consolidate",
+        "P3_final_plan"
+      ]
+    },
+    "review": {
+      "COLLAB_REVIEW_MODE_A": ["R0_collect_task_artifacts", "R1_task_review"],
+      "COLLAB_REVIEW_MODE_B": ["R0_repo_intake", "R1_standalone_review"],
+      "COLLAB_REVIEW_PRESET_LITE": ["R0_lite_review"],
+      "COLLAB_REVIEW_PRESET_STANDARD": [
+        "R0_standard_review",
+        "R1_verify_findings"
+      ],
+      "COLLAB_REVIEW_PRESET_STRICT": [
+        "R0_strict_review",
+        "R1_cross_verify",
+        "R2_consolidate"
+      ]
+    },
+    "harden": {
+      "COLLAB_HARDEN_LITE": ["H0_lite_scan"],
+      "COLLAB_HARDEN_STANDARD": ["H0_threat_model", "H1_fix_recommendations"],
+      "COLLAB_HARDEN_FULL": [
+        "H0_full_threat_model",
+        "H1_cross_harden_review",
+        "H2_consolidate"
+      ]
+    }
+  }
+}

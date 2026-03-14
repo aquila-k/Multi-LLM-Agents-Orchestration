@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "collab/configs/schemas/providers.schema.json",
+  "title": "Provider Defaults",
+  "description": "Default model and effort per provider. Applied to all steps that don't specify an override.",
+  "type": "object",
+  "required": ["version", "providers"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "const": 1 },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "codex": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": [
+                "gpt-5.4",
+                "gpt-5.3-codex",
+                "gpt-5.2-codex",
+                "gpt-5.2",
+                "gpt-5.1-codex-max",
+                "gpt-5.1-codex-mini"
+              ],
+              "description": "Default model for all codex steps. gpt-5.3-codex is the codex default; gpt-5.4 is current frontier."
+            },
+            "effort": {
+              "type": "string",
+              "enum": ["low", "mid", "high", "xhigh"],
+              "description": "Default reasoning effort for all codex steps."
+            }
+          }
+        },
+        "copilot": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": [
+                "claude-sonnet-4.6",
+                "claude-sonnet-4.5",
+                "claude-haiku-4.5",
+                "claude-opus-4.6",
+                "claude-opus-4.5",
+                "claude-sonnet-4",
+                "gemini-3-pro-preview",
+                "gpt-5.4",
+                "gpt-5.3-codex",
+                "gpt-5.2-codex",
+                "gpt-5.2",
+                "gpt-5.1-codex-max",
+                "gpt-5.1-codex",
+                "gpt-5.1",
+                "gpt-5.1-codex-mini",
+                "gpt-5-mini",
+                "gpt-4.1"
+              ],
+              "description": "Default model for all copilot steps. claude-sonnet-4.6 is default (1x cost). gpt-5-mini and gpt-4.1 are free."
+            },
+            "effort": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "xhigh"],
+              "description": "Reasoning effort for copilot steps. Set via COPILOT_REASONING_EFFORT env var (confirmed working). Default is 'medium'. Note: gpt-5-mini and gpt-4.1 (free tier) do not support extended thinking."
+            }
+          }
+        },
+        "gemini": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": [
+                "gemini-2.5-pro",
+                "gemini-3.1-pro-preview",
+                "gemini-3-pro-preview",
+                "gemini-3-flash-preview",
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
+                "auto",
+                "pro",
+                "flash",
+                "flash-lite"
+              ],
+              "description": "Model or alias. Aliases: auto/pro→gemini-3.1-pro-preview, flash→gemini-3-flash-preview, flash-lite→gemini-2.5-flash-lite."
+            },
+            "effort": {
+              "type": "string",
+              "enum": ["minimal", "low", "medium", "high"],
+              "description": "Thinking level for Gemini steps. Gemini 3 series uses thinkingLevel; Gemini 2.5 series uses thinkingBudget. Applied via GEMINI_CLI_SYSTEM_SETTINGS_PATH temp file. 'xhigh' is not valid for Gemini (use 'high'). Default: model default (no override)."
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "providers": {
+        "codex": { "model": "gpt-5.3-codex", "effort": "mid" },
+        "copilot": { "model": "claude-sonnet-4.6", "effort": "medium" },
+        "gemini": { "model": "gemini-3.1-pro-preview" }
+      }
+    }
+  ]
+}

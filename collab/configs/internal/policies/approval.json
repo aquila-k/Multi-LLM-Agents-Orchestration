@@ -1,0 +1,16 @@
+{
+  "policy": "approval",
+  "stopCategories": [
+    "approval_required",
+    "task_ambiguity",
+    "missing_tool_or_auth",
+    "provider_retry_exhausted",
+    "unsafe_apply",
+    "budget_stop",
+    "strategy_budget_preflight",
+    "resume_override_conflict",
+    "provider_capability_mismatch",
+    "artifact_consistency_failure"
+  ],
+  "autoAdvanceRequiresOptIn": true
+}

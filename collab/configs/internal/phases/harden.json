@@ -1,0 +1,18 @@
+{
+  "phase": "harden",
+  "defaultStrategyId": "COLLAB_HARDEN_STANDARD",
+  "autoAdvanceDefault": false,
+  "allowWithHarden": false,
+  "candidateProfiles": [
+    "harden-codex-primary",
+    "harden-gemini-primary",
+    "harden-copilot-primary"
+  ],
+  "resumeRequiredCapabilities": [
+    {
+      "key": "session.resume",
+      "high_impact": true
+    }
+  ],
+  "composition": {}
+}

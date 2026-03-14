@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlanArtifact",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "taskId",
+    "phase",
+    "summary",
+    "implementationSteps",
+    "targetPaths",
+    "constraints"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "stepId": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Brief description of what will be implemented"
+    },
+    "implementationSteps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "targetFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "targetPaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "dangerousOperations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvalRequired": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ambiguitiesResolved": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ambiguitiesDeferred": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extractedFrom": {
+      "type": "string",
+      "description": "source artifact ref"
+    },
+    "allowedMutationScopes": {
+      "type": "array",
+      "description": "Explicit list of paths/modules the plan is allowed to mutate",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approvedRiskListRef": {
+      "type": "string",
+      "description": "Reference to an approved risk list document or artifact ID"
+    },
+    "targetScopeSummary": {
+      "type": "object",
+      "description": "Compact scope summary produced by plan_artifact_scope_summary()",
+      "properties": {
+        "totalSteps": { "type": "integer" },
+        "totalChecklistItems": { "type": "integer" },
+        "hasTargetPaths": { "type": "boolean" },
+        "hasDeferredItems": { "type": "boolean" }
+      }
+    }
+  }
+}

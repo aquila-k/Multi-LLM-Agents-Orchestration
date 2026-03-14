@@ -1,0 +1,209 @@
+{
+  "strategies": [
+    {
+      "strategyId": "COLLAB_PLAN_QUESTIONS_ONLY",
+      "slug": "plan.questions-only",
+      "phase": "plan",
+      "enabled": true,
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 3,
+      "estimatedCallsMax": 5,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "use when ambiguity is high enough that direct planning would likely rework"
+      ],
+      "steps": [
+        {
+          "id": "P0_questions",
+          "agentProfile": "plan-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "P1_question_summary",
+          "agentProfile": "plan-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_PLAN_MINIMAL",
+      "slug": "plan.minimal",
+      "phase": "plan",
+      "enabled": true,
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 4,
+      "estimatedCallsMax": 6,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "use for small, clear, low-risk changes with narrow impact"
+      ],
+      "steps": [
+        {
+          "id": "P0_quick_survey",
+          "agentProfile": "plan-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "P1_minimal_plan",
+          "agentProfile": "plan-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_PLAN_FULL",
+      "slug": "plan.full",
+      "phase": "plan",
+      "enabled": true,
+      "estimatedCallsMin": 4,
+      "estimatedCallsDefault": 6,
+      "estimatedCallsMax": 10,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "default plan strategy for normal multi-file or non-trivial work"
+      ],
+      "steps": [
+        {
+          "id": "P1_preflight_questions",
+          "agentProfile": "plan-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R0_repo_survey",
+          "agentProfile": "plan-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "FINAL_plan",
+          "agentProfile": "plan-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_PLAN_THOROUGH",
+      "slug": "plan.thorough",
+      "phase": "plan",
+      "enabled": true,
+      "estimatedCallsMin": 6,
+      "estimatedCallsDefault": 9,
+      "estimatedCallsMax": 14,
+      "requiresBudgetConfirm": true,
+      "selectionGuidance": [
+        "use for large scope, high ambiguity, or architecture-affecting work"
+      ],
+      "steps": [
+        {
+          "id": "P0_risk_scan",
+          "agentProfile": "plan-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "P1_parallel_enrich",
+          "agentProfile": "plan-copilot-primary",
+          "parallel": true,
+          "readOnly": true,
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "P2_consolidate",
+          "agentProfile": "plan-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "P3_final_plan",
+          "agentProfile": "plan-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    }
+  ]
+}

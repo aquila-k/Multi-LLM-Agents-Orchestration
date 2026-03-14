@@ -1,0 +1,352 @@
+{
+  "profiles": [
+    {
+      "profile": "plan-gemini-primary",
+      "phase": "plan",
+      "provider": "gemini",
+      "defaultModelRef": "gemini-primary",
+      "defaultOptions": {
+        "mode": "default"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 3,
+        "sessionFit": 5,
+        "outputDisciplineFit": 4,
+        "evidenceFit": 5,
+        "reliabilityFit": 4,
+        "costFit": 3,
+        "latencyFit": 4,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": ["default plan candidate for evidence-heavy planning"]
+    },
+    {
+      "profile": "plan-codex-primary",
+      "phase": "plan",
+      "provider": "codex",
+      "defaultModelRef": "codex-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 4,
+        "sessionFit": 5,
+        "outputDisciplineFit": 4,
+        "evidenceFit": 4,
+        "reliabilityFit": 4,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "balanced alternative when plan output discipline matters"
+      ]
+    },
+    {
+      "profile": "plan-copilot-primary",
+      "phase": "plan",
+      "provider": "copilot",
+      "defaultModelRef": "copilot-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 3,
+        "contextFit": 3,
+        "toolFit": 3,
+        "sessionFit": 2,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 3,
+        "reliabilityFit": 3,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 3
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 2,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": ["kept as a lower-confidence plan candidate"]
+    },
+    {
+      "profile": "impl-codex-primary",
+      "phase": "impl",
+      "provider": "codex",
+      "defaultModelRef": "codex-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 5,
+        "contextFit": 4,
+        "toolFit": 5,
+        "sessionFit": 5,
+        "outputDisciplineFit": 5,
+        "evidenceFit": 3,
+        "reliabilityFit": 5,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "default implementation candidate for bounded patch work"
+      ]
+    },
+    {
+      "profile": "impl-gemini-primary",
+      "phase": "impl",
+      "provider": "gemini",
+      "defaultModelRef": "gemini-primary",
+      "defaultOptions": {
+        "mode": "default"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 4,
+        "sessionFit": 5,
+        "outputDisciplineFit": 4,
+        "evidenceFit": 3,
+        "reliabilityFit": 4,
+        "costFit": 3,
+        "latencyFit": 4,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "implementation alternative when broader context fit matters"
+      ]
+    },
+    {
+      "profile": "impl-copilot-primary",
+      "phase": "impl",
+      "provider": "copilot",
+      "defaultModelRef": "copilot-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 3,
+        "contextFit": 3,
+        "toolFit": 3,
+        "sessionFit": 2,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 2,
+        "reliabilityFit": 3,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 3
+      },
+      "penalties": {
+        "normalizationBurden": 2,
+        "providerUncertainty": 2,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "retained as a lower-priority implementation candidate"
+      ]
+    },
+    {
+      "profile": "review-gemini-primary",
+      "phase": "review",
+      "provider": "gemini",
+      "defaultModelRef": "gemini-primary",
+      "defaultOptions": {
+        "mode": "default"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 3,
+        "sessionFit": 4,
+        "outputDisciplineFit": 5,
+        "evidenceFit": 5,
+        "reliabilityFit": 5,
+        "costFit": 3,
+        "latencyFit": 4,
+        "mergeFit": 5
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "default review candidate for evidence and synthesis quality"
+      ]
+    },
+    {
+      "profile": "review-codex-primary",
+      "phase": "review",
+      "provider": "codex",
+      "defaultModelRef": "codex-fast-verify",
+      "defaultOptions": {
+        "reasoningEffort": "low"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 4,
+        "sessionFit": 4,
+        "outputDisciplineFit": 5,
+        "evidenceFit": 4,
+        "reliabilityFit": 4,
+        "costFit": 3,
+        "latencyFit": 4,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": ["fast verification-oriented review alternative"]
+    },
+    {
+      "profile": "review-copilot-primary",
+      "phase": "review",
+      "provider": "copilot",
+      "defaultModelRef": "copilot-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 3,
+        "contextFit": 3,
+        "toolFit": 2,
+        "sessionFit": 2,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 3,
+        "reliabilityFit": 3,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 3
+      },
+      "penalties": {
+        "normalizationBurden": 2,
+        "providerUncertainty": 2,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": ["kept as a tertiary review candidate"]
+    },
+    {
+      "profile": "harden-codex-primary",
+      "phase": "harden",
+      "provider": "codex",
+      "defaultModelRef": "codex-primary",
+      "defaultOptions": {
+        "reasoningEffort": "high"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 5,
+        "contextFit": 4,
+        "toolFit": 4,
+        "sessionFit": 5,
+        "outputDisciplineFit": 4,
+        "evidenceFit": 5,
+        "reliabilityFit": 5,
+        "costFit": 2,
+        "latencyFit": 3,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": [
+        "default hardening candidate for higher-rigor analysis"
+      ]
+    },
+    {
+      "profile": "harden-gemini-primary",
+      "phase": "harden",
+      "provider": "gemini",
+      "defaultModelRef": "gemini-primary",
+      "defaultOptions": {
+        "mode": "default"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 4,
+        "contextFit": 4,
+        "toolFit": 3,
+        "sessionFit": 5,
+        "outputDisciplineFit": 4,
+        "evidenceFit": 5,
+        "reliabilityFit": 4,
+        "costFit": 3,
+        "latencyFit": 4,
+        "mergeFit": 4
+      },
+      "penalties": {
+        "normalizationBurden": 1,
+        "providerUncertainty": 1,
+        "knownBadPenalty": 0
+      },
+      "selectionNotes": ["hardening alternative with strong evidence quality"]
+    },
+    {
+      "profile": "harden-copilot-primary",
+      "phase": "harden",
+      "provider": "copilot",
+      "defaultModelRef": "copilot-primary",
+      "defaultOptions": {
+        "reasoningEffort": "medium"
+      },
+      "estimatedCostUnits": 0.0,
+      "routingScores": {
+        "capabilityFit": 2,
+        "contextFit": 3,
+        "toolFit": 2,
+        "sessionFit": 2,
+        "outputDisciplineFit": 3,
+        "evidenceFit": 3,
+        "reliabilityFit": 3,
+        "costFit": 3,
+        "latencyFit": 3,
+        "mergeFit": 3
+      },
+      "penalties": {
+        "normalizationBurden": 2,
+        "providerUncertainty": 2,
+        "knownBadPenalty": 1
+      },
+      "selectionNotes": ["retained as a lower-confidence hardening candidate"]
+    }
+  ]
+}

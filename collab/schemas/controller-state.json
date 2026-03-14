@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collab/schemas/controller-state.json",
+  "title": "Collab Controller State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "active_phase",
+    "active_step",
+    "active_strategy",
+    "current_status",
+    "last_successful_artifact_refs",
+    "pending_approval_state",
+    "retry_counters",
+    "resume_selectors",
+    "latest_shell_digest_refs",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "active_phase": {
+      "type": "string",
+      "enum": ["plan", "impl", "review", "harden"]
+    },
+    "active_step": {
+      "type": "string",
+      "minLength": 1
+    },
+    "active_strategy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "current_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "blocked",
+        "partial",
+        "succeeded",
+        "failed",
+        "canceled"
+      ]
+    },
+    "last_successful_artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "pending_approval_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "status"],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "not_required"]
+        },
+        "marker": {
+          "type": "string"
+        }
+      }
+    },
+    "retry_counters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "resume_selectors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["plan", "impl", "review", "harden"]
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "step": {
+          "type": "string"
+        },
+        "resume_from": {
+          "type": "string"
+        },
+        "approval_continuation": {
+          "type": "string"
+        }
+      }
+    },
+    "latest_shell_digest_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "blocked_reason": {
+      "type": "string"
+    },
+    "failure_class": {
+      "type": "string"
+    },
+    "resume_hint": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

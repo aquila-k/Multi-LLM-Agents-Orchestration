@@ -1,0 +1,75 @@
+{
+  "$comment": "Provider capability reference: valid model IDs and effort levels per provider. Keep this file and providers.schema.json / phase.schema.json in sync when models or effort levels change.",
+  "codex": {
+    "models": [
+      "gpt-5.4",
+      "gpt-5.3-codex",
+      "gpt-5.2-codex",
+      "gpt-5.2",
+      "gpt-5.1-codex-max",
+      "gpt-5.1-codex-mini"
+    ],
+    "defaultModel": "gpt-5.3-codex",
+    "effortLevels": ["low", "mid", "high", "xhigh"],
+    "defaultEffort": "high"
+  },
+  "copilot": {
+    "models": [
+      "claude-sonnet-4.6",
+      "claude-sonnet-4.5",
+      "claude-haiku-4.5",
+      "claude-opus-4.6",
+      "claude-opus-4.5",
+      "claude-sonnet-4",
+      "gemini-3-pro-preview",
+      "gpt-5.4",
+      "gpt-5.3-codex",
+      "gpt-5.2-codex",
+      "gpt-5.2",
+      "gpt-5.1-codex-max",
+      "gpt-5.1-codex",
+      "gpt-5.1",
+      "gpt-5.1-codex-mini",
+      "gpt-5-mini",
+      "gpt-4.1"
+    ],
+    "defaultModel": "claude-sonnet-4.6",
+    "effortLevels": ["low", "medium", "high", "xhigh"],
+    "defaultEffort": "xhigh",
+    "effortNotes": {
+      "freeTierModels": ["gpt-5-mini", "gpt-4.1"],
+      "freeTierNote": "Free tier models do not support extended thinking; effort setting is ignored."
+    },
+    "costNotes": {
+      "claude-haiku-4.5": "0.33x",
+      "claude-opus-4.6": "3x",
+      "claude-opus-4.5": "3x",
+      "gpt-5.1-codex-mini": "0.33x",
+      "gpt-5-mini": "0x",
+      "gpt-4.1": "0x"
+    }
+  },
+  "gemini": {
+    "models": [
+      "gemini-2.5-pro",
+      "gemini-3.1-pro-preview",
+      "gemini-3-pro-preview",
+      "gemini-3-flash-preview",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite"
+    ],
+    "aliases": {
+      "auto": "gemini-3.1-pro-preview",
+      "pro": "gemini-3.1-pro-preview",
+      "flash": "gemini-3-flash-preview",
+      "flash-lite": "gemini-2.5-flash-lite"
+    },
+    "defaultModel": "gemini-3.1-pro-preview",
+    "effortLevels": ["minimal", "low", "medium", "high"],
+    "effortMechanism": {
+      "gemini3Series": "thinkingLevel",
+      "gemini25Series": "thinkingBudget",
+      "transport": "GEMINI_CLI_SYSTEM_SETTINGS_PATH"
+    }
+  }
+}

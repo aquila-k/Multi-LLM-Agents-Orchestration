@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApprovalRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "taskId",
+    "phase",
+    "operationType",
+    "scope",
+    "rationale"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "stepId": {
+      "type": "string"
+    },
+    "operationType": {
+      "type": "string",
+      "enum": [
+        "file_delete",
+        "file_rename",
+        "file_move",
+        "dependency_add",
+        "dependency_update",
+        "lockfile_update",
+        "permission_change",
+        "git_push",
+        "git_history_rewrite",
+        "network_install",
+        "network_download",
+        "db_migration",
+        "external_api_write",
+        "secret_create",
+        "secret_update",
+        "secret_delete",
+        "cicd_config_change",
+        "docker_env_change",
+        "binary_file_add",
+        "binary_file_update",
+        "license_impacting_dependency",
+        "large_diff"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "targetFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "targetDependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "affectedPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "estimatedChangedFiles": {
+          "type": "integer"
+        },
+        "estimatedChangedLines": {
+          "type": "integer"
+        }
+      }
+    },
+    "operationTypes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "maxFiles": {
+      "type": "integer"
+    },
+    "maxBytes": {
+      "type": "integer"
+    },
+    "validPhases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "impact": {
+      "type": "string"
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "preApprovedInPlan": {
+      "type": "boolean"
+    },
+    "preApprovalRef": {
+      "type": "string"
+    }
+  }
+}

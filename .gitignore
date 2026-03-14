@@ -1,0 +1,49 @@
+# ============================================================
+# .gitignore — Multi-LLM Agents Orchestration (public)
+# ============================================================
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# ---- OS / IDE ----
+.DS_Store
+Thumbs.db
+.vscode/
+.trunk/
+.jj/
+
+# ---- Editor agent local settings ----
+*settings.json
+*settings.local.json
+
+# ---- Working / scratch directories ----
+.archive/
+.plan/
+.references/
+.tmp/
+plan/
+.not-for-public/*
+
+# ---- Internal / project-specific docs not for public ----
+.requirements.md
+
+# ---- Config state (generated per-environment) ----
+*config-state.md
+*config-state.yaml
+
+# ---- Context Manager local instance (DB, config, cache) ----
+.contexts/local/
+
+# ---- collab runtime data (project-specific, not tool code) ----
+collab/artifacts/tasks/
+collab/state/
+
+# collab facts — keep READMEs, exclude runtime probe/env data
+collab/facts/**/*.json
+collab/facts/*.json

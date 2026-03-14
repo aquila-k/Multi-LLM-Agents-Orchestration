@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["session_goal"],
+  "properties": {
+    "session_goal": { "type": "string" },
+    "working_notes": { "type": "string" },
+    "temporary_assumptions": { "type": "array", "items": { "type": "string" } },
+    "recent_steps": { "type": "array", "items": { "type": "string" } },
+    "pending_actions": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

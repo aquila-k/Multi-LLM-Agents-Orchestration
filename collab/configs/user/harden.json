@@ -1,0 +1,91 @@
+{
+  "$schema": "../schemas/phase.schema.json",
+  "version": 1,
+  "phase": "harden",
+  "$presets": {
+    "codex-standard": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "mid"
+    },
+    "codex-quality": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "high"
+    },
+    "codex-frontier": {
+      "provider": "codex",
+      "model": "gpt-5.4",
+      "effort": "xhigh"
+    },
+    "copilot-standard": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "high"
+    },
+    "copilot-fast": {
+      "provider": "copilot",
+      "model": "claude-haiku-4.5",
+      "effort": "low"
+    },
+    "copilot-quality": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "xhigh"
+    },
+    "copilot-extreme": {
+      "provider": "copilot",
+      "model": "claude-opus-4.6",
+      "effort": "xhigh"
+    },
+    "gemini-quality": {
+      "provider": "gemini",
+      "model": "pro",
+      "effort": "high"
+    }
+  },
+  "default": {
+    "$preset": "codex-quality"
+  },
+  "strategies": {
+    "COLLAB_HARDEN_LITE": {
+      "default": {
+        "$preset": "codex-standard"
+      },
+      "steps": {
+        "H0_lite_scan": {
+          "$preset": "gemini-quality"
+        }
+      }
+    },
+    "COLLAB_HARDEN_STANDARD": {
+      "default": {
+        "$preset": "codex-quality"
+      },
+      "steps": {
+        "H0_threat_model": {
+          "$preset": "codex-quality"
+        },
+        "H1_fix_recommendations": {
+          "$preset": "copilot-standard"
+        }
+      }
+    },
+    "COLLAB_HARDEN_FULL": {
+      "default": {
+        "$preset": "codex-frontier"
+      },
+      "steps": {
+        "H0_full_threat_model": {
+          "$preset": "codex-frontier"
+        },
+        "H1_cross_harden_review": {
+          "$preset": "copilot-standard"
+        },
+        "H2_consolidate": {
+          "$preset": "codex-frontier"
+        }
+      }
+    }
+  }
+}

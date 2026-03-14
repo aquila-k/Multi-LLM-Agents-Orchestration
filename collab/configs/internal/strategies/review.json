@@ -1,0 +1,233 @@
+{
+  "strategies": [
+    {
+      "strategyId": "COLLAB_REVIEW_MODE_A",
+      "slug": "review.mode-a",
+      "phase": "review",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 4,
+      "estimatedCallsMax": 6,
+      "autoApplyFixes": true,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "task-linked review that relies on accumulated task artifacts"
+      ],
+      "steps": [
+        {
+          "id": "R0_collect_task_artifacts",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R1_task_review",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_REVIEW_MODE_B",
+      "slug": "review.mode-b",
+      "phase": "review",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 4,
+      "estimatedCallsMax": 6,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "standalone review of existing code when task artifacts are absent"
+      ],
+      "steps": [
+        {
+          "id": "R0_repo_intake",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R1_standalone_review",
+          "agentProfile": "review-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_REVIEW_PRESET_LITE",
+      "slug": "review.lite",
+      "phase": "review",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 3,
+      "estimatedCallsMax": 4,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": ["use for low-risk and localized review work"],
+      "steps": [
+        {
+          "id": "R0_lite_review",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_REVIEW_PRESET_STANDARD",
+      "slug": "review.standard",
+      "phase": "review",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 5,
+      "estimatedCallsMax": 7,
+      "autoApplyFixes": true,
+      "maxRepairLoops": 3,
+      "estimatedCallsPerLoop": 2,
+      "escalationRequiresApproval": false,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": ["default review path for normal changes"],
+      "steps": [
+        {
+          "id": "R0_standard_review",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R1_verify_findings",
+          "agentProfile": "review-codex-primary",
+          "mutationAuthority": "read_only",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_REVIEW_PRESET_STRICT",
+      "slug": "review.strict",
+      "phase": "review",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 4,
+      "estimatedCallsDefault": 6,
+      "estimatedCallsMax": 9,
+      "maxRepairLoops": 5,
+      "estimatedCallsPerLoop": 3,
+      "escalationRequiresApproval": true,
+      "requiresBudgetConfirm": true,
+      "selectionGuidance": [
+        "use for high-risk, cross-cutting, or release-facing review"
+      ],
+      "steps": [
+        {
+          "id": "R0_strict_review",
+          "agentProfile": "review-copilot-primary",
+          "parallel": true,
+          "readOnly": true,
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R1_cross_verify",
+          "agentProfile": "review-codex-primary",
+          "parallel": true,
+          "readOnly": true,
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "R2_consolidate",
+          "agentProfile": "review-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    }
+  ]
+}

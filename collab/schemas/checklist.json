@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Checklist",
+  "type": "object",
+  "required": ["schemaVersion", "taskId", "phase", "items"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "category", "status"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["impl", "review", "harden", "verify"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "done", "skipped", "blocked"]
+          },
+          "targetFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "extractedFrom": {
+      "type": "string"
+    }
+  }
+}

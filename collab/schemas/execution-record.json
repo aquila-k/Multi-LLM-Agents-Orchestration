@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collab/schemas/execution-record.json",
+  "title": "Collab Execution Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "phase",
+    "step",
+    "attempt",
+    "run",
+    "status",
+    "actor",
+    "started_at",
+    "completed_at",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["plan", "impl", "review", "harden"]
+    },
+    "step": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "partial",
+        "succeeded",
+        "failed",
+        "canceled"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["host", "provider"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string"
+        }
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exit_code": {
+      "type": "integer"
+    },
+    "shell_summary": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_ref": {
+          "type": "string"
+        },
+        "response_ref": {
+          "type": "string"
+        },
+        "normalized_ref": {
+          "type": "string"
+        },
+        "validation_ref": {
+          "type": "string"
+        },
+        "shell_digest_ref": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

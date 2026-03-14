@@ -1,0 +1,147 @@
+{
+  "strategies": [
+    {
+      "strategyId": "COLLAB_HARDEN_LITE",
+      "slug": "harden.lite",
+      "phase": "harden",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 2,
+      "estimatedCallsDefault": 3,
+      "estimatedCallsMax": 4,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": ["lightweight hardening for routine changes"],
+      "steps": [
+        {
+          "id": "H0_lite_scan",
+          "agentProfile": "harden-copilot-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_HARDEN_STANDARD",
+      "slug": "harden.standard",
+      "phase": "harden",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 3,
+      "estimatedCallsDefault": 5,
+      "estimatedCallsMax": 7,
+      "maxRepairLoops": 3,
+      "estimatedCallsPerLoop": 2,
+      "escalationRequiresApproval": false,
+      "requiresBudgetConfirm": false,
+      "selectionGuidance": [
+        "default hardening path when extra security review is justified"
+      ],
+      "steps": [
+        {
+          "id": "H0_threat_model",
+          "agentProfile": "harden-codex-primary",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "H1_fix_recommendations",
+          "agentProfile": "harden-copilot-primary",
+          "autoApplyFixes": true,
+          "mutationAuthority": "provider_sandboxed_write",
+          "remediationProvider": "codex",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    },
+    {
+      "strategyId": "COLLAB_HARDEN_FULL",
+      "slug": "harden.full",
+      "phase": "harden",
+      "enabled": true,
+      "_notes": {
+        "_remediationProvider": "codex"
+      },
+      "estimatedCallsMin": 4,
+      "estimatedCallsDefault": 7,
+      "estimatedCallsMax": 10,
+      "maxRepairLoops": 5,
+      "estimatedCallsPerLoop": 3,
+      "escalationRequiresApproval": true,
+      "requiresBudgetConfirm": true,
+      "selectionGuidance": ["release-grade or high-exposure hardening"],
+      "steps": [
+        {
+          "id": "H0_full_threat_model",
+          "agentProfile": "harden-codex-primary",
+          "parallel": true,
+          "readOnly": true,
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "H1_cross_harden_review",
+          "agentProfile": "harden-copilot-primary",
+          "autoApplyFixes": true,
+          "mutationAuthority": "provider_sandboxed_write",
+          "remediationProvider": "codex",
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        },
+        {
+          "id": "H2_consolidate",
+          "agentProfile": "harden-codex-primary",
+          "readOnly": true,
+          "inputContract": {
+            "requiredArtifacts": [],
+            "optionalArtifacts": [],
+            "onMissingRequired": "stop"
+          },
+          "outputContract": {
+            "producedArtifacts": [],
+            "completionSignal": "controller_status:completed"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "phase": "plan",
+  "defaultStrategyId": "COLLAB_PLAN_FULL",
+  "autoAdvanceDefault": false,
+  "allowWithHarden": false,
+  "candidateProfiles": [
+    "plan-gemini-primary",
+    "plan-codex-primary",
+    "plan-copilot-primary"
+  ],
+  "resumeRequiredCapabilities": [
+    {
+      "key": "session.resume",
+      "high_impact": true
+    }
+  ],
+  "composition": {}
+}

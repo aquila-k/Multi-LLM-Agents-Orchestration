@@ -1,0 +1,37 @@
+{
+  "policy": "budget",
+  "defaultBudgetProfile": {
+    "profileId": "budget-bootstrap",
+    "taskSoftCap": null,
+    "taskHardCap": null,
+    "phaseCaps": {
+      "plan": null,
+      "impl": null,
+      "review": null,
+      "harden": null
+    },
+    "providerCaps": {
+      "codex": null,
+      "gemini": null,
+      "copilot": null
+    },
+    "parallelReviewCap": null,
+    "budgetMode": "manual_until_user_confirms_defaults",
+    "estimatedNextCostClass": "medium"
+  },
+  "gateRules": {
+    "stopBelowEstimatedCallsMin": true,
+    "confirmOnSoftCapRisk": true,
+    "confirmOnHardCapRisk": true
+  },
+  "loopBudgetPolicy": {
+    "estimatedCostPerLoopDefault": 1.0,
+    "maxLoopBudgetMultiplier": 5.0,
+    "continueBeyondLoopCapRequiresApproval": true
+  },
+  "escalationPolicy": {
+    "highCostProviders": ["copilot", "claude-opus"],
+    "escalationApprovalRequired": true,
+    "reroute_candidates_on_soft_cap": ["codex-mini", "gemini-flash"]
+  }
+}

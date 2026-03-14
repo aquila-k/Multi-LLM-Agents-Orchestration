@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ApprovalDecision",
+  "type": "object",
+  "required": ["schemaVersion", "taskId", "approvalRequestRef", "decision"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "approvalRequestRef": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["approved", "rejected", "deferred"]
+    },
+    "approvalMode": {
+      "type": "string",
+      "enum": ["operation", "bundle", "phase", "task", "project"]
+    },
+    "scopeLevel": {
+      "type": "string"
+    },
+    "scopeMatchPolicy": {
+      "type": "string"
+    },
+    "grantedByUserExplicitly": {
+      "type": "boolean"
+    },
+    "validUntilPhase": {
+      "type": "string"
+    },
+    "decidedBy": {
+      "type": "string"
+    },
+    "decidedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

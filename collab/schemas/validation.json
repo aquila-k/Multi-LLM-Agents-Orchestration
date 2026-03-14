@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collab/schemas/validation.json",
+  "title": "Collab Validation Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "overall_outcome",
+    "stages",
+    "apply_readiness",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "overall_outcome": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "passed_with_warnings",
+        "failed_but_meaningful",
+        "failed_unusable"
+      ]
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 7,
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    },
+    "apply_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ready", "codes"],
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "APPLY_FINGERPRINT_MISMATCH",
+              "APPLY_MODE_REQUIRES_APPROVAL",
+              "APPLY_SCOPE_FAILED",
+              "APPLY_FORBIDDEN_PATH",
+              "APPLY_TOO_MANY_FILES",
+              "APPLY_TOO_MANY_BYTES",
+              "APPLY_DELETE_REQUIRES_APPROVAL",
+              "APPLY_UNRESOLVED_CONFLICT",
+              "APPLY_MISSING_ARTIFACT",
+              "APPLY_BUDGET_BLOCKED"
+            ]
+          },
+          "default": []
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validator_version", "created_at"],
+      "properties": {
+        "validator_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "normalized_ref": {
+          "type": "string"
+        },
+        "response_ref": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "outcome"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "request_validation",
+            "execution_validation",
+            "response_analysis_validation",
+            "response_schema_validation",
+            "normalization_validation",
+            "scope_validation",
+            "apply_readiness_validation"
+          ]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "passed_with_warnings",
+            "failed_but_meaningful",
+            "failed_unusable"
+          ]
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

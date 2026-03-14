@@ -1,0 +1,24 @@
+{
+  "phase": "review",
+  "defaultStrategyId": "COLLAB_REVIEW_PRESET_STANDARD",
+  "autoAdvanceDefault": false,
+  "allowWithHarden": true,
+  "candidateProfiles": [
+    "review-gemini-primary",
+    "review-codex-primary",
+    "review-copilot-primary"
+  ],
+  "resumeRequiredCapabilities": [
+    {
+      "key": "session.resume",
+      "high_impact": true
+    }
+  ],
+  "composition": {
+    "withHarden": {
+      "enabled": true,
+      "followOnPhase": "harden",
+      "sharedArtifactRefs": ["review-summary", "validation-report"]
+    }
+  }
+}

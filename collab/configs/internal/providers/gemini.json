@@ -1,0 +1,83 @@
+{
+  "provider": "gemini",
+  "command": "gemini",
+  "mutationCapabilities": {
+    "directWriteSupported": false,
+    "allowlistEnforceable": false
+  },
+  "defaultModelRef": "gemini-primary",
+  "validationModelRef": "gemini-flash-lite",
+  "modelAliases": {
+    "gemini-primary": "gemini-3.1-pro-preview",
+    "gemini-fast": "gemini-3-flash-preview",
+    "gemini-standard": "gemini-3-flash-preview",
+    "gemini-flash-lite": "gemini-2.5-flash-lite",
+    "auto": "gemini-3.1-pro-preview",
+    "pro": "gemini-3.1-pro-preview",
+    "flash": "gemini-3-flash-preview",
+    "flash-lite": "gemini-2.5-flash-lite"
+  },
+  "defaultOptions": {
+    "mode": "default"
+  },
+  "supportedOptionKeys": ["model", "mode", "reasoningEffort", "timeoutMs"],
+  "thinkingConfigMechanism": {
+    "envVar": "GEMINI_CLI_SYSTEM_SETTINGS_PATH",
+    "aliasName": "_collab_thinking",
+    "gemini3Series": "thinkingLevel: minimal|low|medium|high",
+    "gemini25Series": "thinkingBudget: 0|2048|8192|-1"
+  },
+  "liveExecFlags": {
+    "stdinPrompt": true,
+    "positionalPrompt": true,
+    "outputFormatFlag": "--output-format",
+    "outputFormatJson": "json",
+    "outputFormatStreamJson": "stream-json",
+    "modelFlag": "--model",
+    "resumeFlag": "--resume",
+    "resumeLatestValue": "latest"
+  },
+  "liveOutputSchema": {
+    "json": {
+      "responseField": "response",
+      "statsField": "stats",
+      "errorField": "error"
+    },
+    "stream-json": {
+      "eventTypes": [
+        "init",
+        "message",
+        "tool_use",
+        "tool_result",
+        "error",
+        "result"
+      ],
+      "sessionIdEvent": "init",
+      "sessionIdField": "session_id"
+    }
+  },
+  "exitCodes": {
+    "0": "success",
+    "1": "general_error",
+    "42": "input_error",
+    "53": "turn_limit_exceeded"
+  },
+  "capabilityRefs": [
+    "session.resume",
+    "output.stream_json",
+    "execution.working_dir_persistence"
+  ],
+  "declaredCapabilities": {
+    "session.resume": "declared",
+    "output.stream_json": "declared",
+    "execution.working_dir_persistence": "declared"
+  },
+  "timeoutDefaults": {
+    "defaultMs": 600000,
+    "stallMs": 300000
+  },
+  "retryDefaults": {
+    "transient": 3,
+    "timeout": 2
+  }
+}

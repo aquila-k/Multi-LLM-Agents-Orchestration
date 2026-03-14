@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+REPO_CODE_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_CODE_ROOT))
+
+from collab.runtime.claude_code_skill import ClaudeCodeSkill
+from collab.runtime.pathing import resolve_runtime_paths
+from collab.runtime.preflight import run_preflight
+from collab.runtime.renderers.console import render_dispatch_summary
+from collab.runtime.task_entrypoint import run_task_from_request
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+
+    start_dir = Path.cwd()
+    if args.source:
+        start_dir = Path(args.source).expanduser().resolve().parent
+    runtime_paths = resolve_runtime_paths(
+        start_dir=start_dir,
+        explicit_root=(
+            Path(args.root_dir).expanduser().resolve() if args.root_dir else None
+        ),
+    )
+    preflight = run_preflight(runtime_paths)
+
+    if args.request_file:
+        dispatch_result = _run_from_request_file(
+            args.request_file, runtime_paths.repo_root
+        )
+    else:
+        if not args.source or not args.workflow_intent:
+            parser.error(
+                "--source and --workflow-intent are required unless --request-file is used"
+            )
+        dispatch_result = ClaudeCodeSkill(root_dir=runtime_paths.repo_root).dispatch(
+            source_path=Path(args.source).expanduser().resolve(),
+            workflow_intent=args.workflow_intent,
+            source_kind=args.source_kind,
+            selectors=_build_selectors(args),
+            targets=_build_targets(args),
+            constraints=_build_constraints(args),
+            operator_context=_build_operator_context(args),
+            phase_options=_build_phase_options(args),
+        )
+
+    print(
+        render_dispatch_summary(
+            dispatch_result=dispatch_result,
+            preflight_result=preflight,
+        )
+    )
+    return 2 if dispatch_result.stop_and_confirm else 0
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="collab/scripts/run",
+        description="Standalone dispatcher entry for the collab runtime.",
+    )
+    parser.add_argument("--root-dir", help="Explicit workspace root override.")
+    parser.add_argument(
+        "--request-file", help="Canonical request JSON to execute directly."
+    )
+    parser.add_argument("--source", help="Source markdown or JSON task file.")
+    parser.add_argument(
+        "--source-kind",
+        choices=("markdown", "json"),
+        default="markdown",
+        help="Source file kind when using --source.",
+    )
+    parser.add_argument(
+        "--workflow-intent",
+        choices=("plan", "impl", "review", "harden", "resume"),
+        help="Phase-oriented dispatcher intent.",
+    )
+    parser.add_argument("--phase", choices=("plan", "impl", "review", "harden"))
+    parser.add_argument("--strategy")
+    parser.add_argument("--step")
+    parser.add_argument("--resume-from")
+    parser.add_argument("--approval-continuation")
+    parser.add_argument("--target-path", action="append", default=[])
+    parser.add_argument("--target-glob", action="append", default=[])
+    parser.add_argument("--target-summary")
+    parser.add_argument("--hard-constraint", action="append", default=[])
+    parser.add_argument("--soft-constraint", action="append", default=[])
+    parser.add_argument("--approval-required", action="append", default=[])
+    parser.add_argument("--disallowed-path", action="append", default=[])
+    parser.add_argument("--operator-summary", required=False)
+    parser.add_argument("--requested-by")
+    parser.add_argument("--session-hint")
+    parser.add_argument(
+        "--approval-mode",
+        choices=("fail_closed", "continue_if_approved"),
+        default="fail_closed",
+    )
+    parser.add_argument("--with-harden", action="store_true")
+    parser.add_argument("--auto-advance", action="store_true")
+    parser.add_argument("--budget-profile-ref", default="budget-bootstrap")
+    return parser
+
+
+def _build_selectors(args: argparse.Namespace) -> dict[str, str]:
+    selectors: dict[str, str] = {}
+    if args.phase:
+        selectors["phase"] = args.phase
+    if args.strategy:
+        selectors["strategy"] = args.strategy
+    if args.step:
+        selectors["step"] = args.step
+    if args.resume_from:
+        selectors["resume_from"] = args.resume_from
+    if args.approval_continuation:
+        selectors["approval_continuation"] = args.approval_continuation
+    return selectors
+
+
+def _build_targets(args: argparse.Namespace) -> dict[str, object]:
+    targets: dict[str, object] = {}
+    if args.target_path:
+        targets["paths"] = list(args.target_path)
+    if args.target_glob:
+        targets["globs"] = list(args.target_glob)
+    if args.target_summary:
+        targets["summary"] = args.target_summary
+    return targets
+
+
+def _build_constraints(args: argparse.Namespace) -> dict[str, object]:
+    constraints: dict[str, object] = {}
+    if args.hard_constraint:
+        constraints["hard"] = list(args.hard_constraint)
+    if args.soft_constraint:
+        constraints["soft"] = list(args.soft_constraint)
+    if args.approval_required:
+        constraints["approvals_required"] = list(args.approval_required)
+    if args.disallowed_path:
+        constraints["disallowed_paths"] = list(args.disallowed_path)
+    return constraints
+
+
+def _build_operator_context(args: argparse.Namespace) -> dict[str, str]:
+    context = {
+        "summary": args.operator_summary or "dispatcher run",
+        "approval_mode": args.approval_mode,
+    }
+    if args.requested_by:
+        context["requested_by"] = args.requested_by
+    if args.session_hint:
+        context["session_hint"] = args.session_hint
+    return context
+
+
+def _build_phase_options(args: argparse.Namespace) -> dict[str, object]:
+    return {
+        "with_harden": bool(args.with_harden),
+        "auto_advance": bool(args.auto_advance),
+        "budget_profile_ref": args.budget_profile_ref,
+    }
+
+
+def _run_from_request_file(request_file: str, repo_root: Path):
+    result = run_task_from_request(
+        request_path=Path(request_file).expanduser().resolve(),
+        root_dir=repo_root,
+    )
+    from collab.interfaces.skill_entry import DispatchResult
+
+    return DispatchResult(
+        task_id=result.task_id,
+        request_path=result.request_path,
+        controller_state_path=result.controller_state_path,
+        intake_snapshot_dir=result.intake_snapshot_dir,
+        shell_summary=result.shell_summary,
+        stop_and_confirm=result.stop_and_confirm,
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
