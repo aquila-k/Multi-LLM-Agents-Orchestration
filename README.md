@@ -153,13 +153,74 @@ Creates `.contexts/local/` (git-ignored) with a SQLite database.
 # Record a design decision
 .contexts/run log-decision --key <key> --scope task/<id> < decision.json
 
-# Search past memory
+# Search past memory (keyword)
 .contexts/run search-memory --query "keyword" --limit 10
+
+# Search past memory (semantic or hybrid — requires vector search to be set up)
+.contexts/run search-memory --query "keyword" --mode hybrid --limit 10
 
 # Maintenance
 .contexts/run doctor          # Health check
 .contexts/run render-context  # Render markdown summary for a scope
 ```
+
+### Vector Search (Optional)
+
+`.contexts/` ships with **FTS5 keyword search** out of the box. An optional **vector (semantic) search** layer can be added without affecting the existing database or any existing commands.
+
+| Profile | Requirements | Search modes |
+| --- | --- | --- |
+| **core** (default) | Python 3.8+, SQLite | `fts` only |
+| **vector-enabled** | Python 3.12, `sqlite-vec`, `fastembed` | `fts`, `semantic`, `hybrid`, `auto` |
+
+#### Setting up the vector-enabled profile
+
+`.contexts/run` is a single unified entry point. Once vector search is set up, it is used automatically — no separate command or entry point is needed.
+
+```bash
+# See what will be installed (disk/time warnings, no changes made)
+.contexts/run setup-vector --dry-run
+
+# Install locally (creates .venv-vector/ next to .contexts/)
+.contexts/run setup-vector
+
+# Install globally to share dependencies across projects (~400 MB saved per project)
+.contexts/run setup-vector --global
+
+# Install to a custom location
+.contexts/run setup-vector --venv-path /path/to/venv
+
+# Verify setup
+.contexts/run vector-doctor
+```
+
+Notes:
+
+- First run downloads ~90 MB embedding model to `~/.cache/huggingface/`
+- Total disk: ~400 MB packages + ~90 MB model weights
+- Initial index build takes 1–3 minutes
+- FTS keyword search works immediately without any setup
+- With `--global`, Python packages are shared across repos; the vector index stays project-local
+
+#### Using vector search
+
+After setup, all search commands use the same `.contexts/run` entry point:
+
+```bash
+# Auto-select best mode (hybrid when vector available, fts otherwise)
+.contexts/run search-memory --query "why was this choice made" --mode auto
+
+# Semantic search (meaning-based, language-independent)
+.contexts/run search-memory --query "authentication approach" --mode semantic
+
+# Hybrid search (FTS + semantic, merged via reciprocal rank fusion)
+.contexts/run search-memory --query "database schema decision" --mode hybrid
+
+# Keep the index up to date after writes
+.contexts/run sync-vector-index
+```
+
+If `semantic` or `hybrid` is requested but vector search is not set up, the response falls back to FTS and includes a `setup_hint` field.
 
 ### Using `.contexts/` with Any Agent
 
@@ -222,11 +283,14 @@ collab/                     # Orchestration runtime (standalone)
   └── tests/                # Unit, integration, stub-e2e, regression
 
 .contexts/                  # Context manager (standalone)
-  ├── run                   # CLI entry point
-  ├── runtime/              # DB, rendering, CLI commands
+  ├── run                   # Unified CLI entry point (auto-detects venv, falls back to python3)
+  ├── runtime/
+  │   └── vector/           # Vector search extension (optional)
   ├── sql/                  # Migration scripts
   ├── schemas/              # Entry payload schemas
-  └── templates/            # Render templates
+  └── local/                # git-ignored; DB, config, and vector_python_path live here
+
+.venv-vector/               # git-ignored; optional repo-local vector venv (created by setup-vector)
 ```
 
 ## License

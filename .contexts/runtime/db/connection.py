@@ -4,6 +4,23 @@ import sqlite3
 from pathlib import Path
 
 
+def open_db_with_vec(db_path: Path, read_only: bool = False) -> tuple:
+    """
+    Open a SQLite database and attempt to load sqlite-vec extension.
+
+    Returns (conn, vec_loaded: bool).
+    Never raises — if vec load fails, returns (conn, False).
+    """
+    conn = open_db(db_path, read_only=read_only)
+    try:
+        from ..vector.enabled import load_sqlite_vec
+
+        vec_loaded = load_sqlite_vec(conn)
+    except Exception:
+        vec_loaded = False
+    return conn, vec_loaded
+
+
 def open_db(db_path: Path, read_only: bool = False) -> sqlite3.Connection:
     """
     Open a SQLite database in WAL mode with foreign_keys=ON.

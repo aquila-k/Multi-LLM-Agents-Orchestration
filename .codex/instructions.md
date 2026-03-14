@@ -31,8 +31,26 @@ When making significant decisions:
 ### Search Memory
 
 ```bash
+# Keyword search (always available)
 .contexts/run search-memory --query "<keyword>" --limit 10 --format markdown
+
+# Semantic / hybrid search (available when vector search is set up)
+.contexts/run search-memory --query "<natural language question>" --mode hybrid --limit 10
 ```
+
+If `semantic` or `hybrid` falls back to FTS, the response includes `vector_unavailable: true` and a `setup_hint`.
+
+### Vector Search Setup (Optional)
+
+Vector search enables semantic and hybrid search modes. To install:
+
+```bash
+.contexts/run setup-vector --dry-run   # preview disk/time requirements
+.contexts/run setup-vector             # install (local)
+.contexts/run setup-vector --global    # install shared across projects
+```
+
+Once installed, `.contexts/run` uses it automatically. No entry point change needed.
 
 ### Environment Variables
 

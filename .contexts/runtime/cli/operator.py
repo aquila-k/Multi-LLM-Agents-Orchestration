@@ -738,3 +738,421 @@ def cmd_rebuild_projections(args, conn, config) -> dict:
     response.update(result)
 
     return response
+
+
+def cmd_sync_vector_index(args, conn, config) -> dict:
+    """Consume dirty queue and update vector projections + embeddings."""
+    project_id = config.get("project_id", "")
+    max_items = getattr(args, "max_items", 64)
+    retry_failed = getattr(args, "retry_failed", False)
+
+    # Load provider
+    try:
+        from ..vector.provider import FastEmbedProvider
+
+        # Try to get model from vector_index_state
+        model_name = FastEmbedProvider._DEFAULT_MODEL
+        try:
+            row = conn.execute(
+                "SELECT provider_model FROM vector_index_state WHERE index_name = 'default'"
+            ).fetchone()
+            if row and row[0]:
+                model_name = row[0]
+        except Exception:
+            pass
+
+        provider = FastEmbedProvider(model_name=model_name)
+    except Exception as exc:
+        return {
+            "ok": False,
+            "command": "sync-vector-index",
+            "project_id": project_id,
+            "generated_at": now_iso(),
+            "error": "Failed to load embedding provider: {}".format(exc),
+            "processed": 0,
+            "skipped": 0,
+            "failed": 0,
+            "duration_ms": 0,
+        }
+
+    try:
+        from ..vector.sync import sync_vector_index
+
+        result = sync_vector_index(
+            conn,
+            provider=provider,
+            max_items=max_items,
+            retry_failed=retry_failed,
+            owner="operator-cli",
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "command": "sync-vector-index",
+            "project_id": project_id,
+            "generated_at": now_iso(),
+            "error": str(exc),
+            "processed": 0,
+            "skipped": 0,
+            "failed": 0,
+            "duration_ms": 0,
+        }
+
+    return {
+        "ok": True,
+        "command": "sync-vector-index",
+        "project_id": project_id,
+        "generated_at": now_iso(),
+        "processed": result.get("processed", 0),
+        "skipped": result.get("skipped", 0),
+        "failed": result.get("failed", 0),
+        "duration_ms": result.get("duration_ms", 0),
+    }
+
+
+def cmd_rebuild_vector_index(args, conn, config) -> dict:
+    """Full or partial rebuild of vector projections and embeddings."""
+    project_id = config.get("project_id", "")
+    mode = "partial" if getattr(args, "since", None) else "full"
+    if getattr(args, "full", False):
+        mode = "full"
+    since = getattr(args, "since", None)
+    scope_ref = getattr(args, "scope", None)
+    entry_type = getattr(args, "entry_type", None)
+    dry_run = getattr(args, "dry_run", False)
+    batch_size = getattr(args, "batch_size", 32)
+
+    # Load provider (skip for dry_run too, we just need to count)
+    if not dry_run:
+        try:
+            from ..vector.provider import FastEmbedProvider
+
+            model_name = FastEmbedProvider._DEFAULT_MODEL
+            try:
+                row = conn.execute(
+                    "SELECT provider_model FROM vector_index_state WHERE index_name = 'default'"
+                ).fetchone()
+                if row and row[0]:
+                    model_name = row[0]
+            except Exception:
+                pass
+
+            provider = FastEmbedProvider(model_name=model_name)
+        except Exception as exc:
+            return {
+                "ok": False,
+                "command": "rebuild-vector-index",
+                "project_id": project_id,
+                "generated_at": now_iso(),
+                "error": "vector stack not available: {}".format(exc),
+            }
+    else:
+        provider = None
+
+    try:
+        from ..vector.rebuild import rebuild_vector_index
+
+        result = rebuild_vector_index(
+            conn,
+            provider=provider,
+            mode=mode,
+            since=since,
+            scope_ref=scope_ref,
+            entry_type=entry_type,
+            dry_run=dry_run,
+            batch_size=batch_size,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "command": "rebuild-vector-index",
+            "project_id": project_id,
+            "generated_at": now_iso(),
+            "error": str(exc),
+        }
+
+    response = {
+        "ok": True,
+        "command": "rebuild-vector-index",
+        "project_id": project_id,
+        "generated_at": now_iso(),
+    }
+    response.update(result)
+    return response
+
+
+def cmd_vector_doctor(args, conn, config) -> dict:
+    """Run vector stack diagnostics."""
+    project_id = config.get("project_id", "")
+
+    # Full stack report
+    try:
+        from ..vector.enabled import full_stack_report
+
+        stack = full_stack_report()
+    except Exception as exc:
+        stack = {"error": str(exc)}
+
+    # vec table exists
+    try:
+        from ..vector.vec_store import count_vec_entries, vec_table_exists
+
+        table_exists = vec_table_exists(conn)
+        vec_count = count_vec_entries(conn) if table_exists else 0
+    except Exception:
+        table_exists = False
+        vec_count = 0
+
+    # Queue depth
+    try:
+        from ..vector.dirty_queue import queue_depth
+
+        queue = queue_depth(conn)
+    except Exception:
+        queue = {"total": 0, "unlocked": 0, "locked": 0, "failed": 0}
+
+    # vector_index_state enabled flag
+    try:
+        row = conn.execute(
+            "SELECT enabled, provider_model, embedding_dim, last_incremental_at "
+            "FROM vector_index_state WHERE index_name = 'default'"
+        ).fetchone()
+        if row:
+            if isinstance(row, __import__("sqlite3").Row):
+                index_enabled = bool(row["enabled"])
+                provider_model = row["provider_model"]
+                embedding_dim = row["embedding_dim"]
+                last_incremental_at = row["last_incremental_at"]
+            else:
+                index_enabled = bool(row[0])
+                provider_model = row[1]
+                embedding_dim = row[2]
+                last_incremental_at = row[3]
+        else:
+            index_enabled = False
+            provider_model = None
+            embedding_dim = None
+            last_incremental_at = None
+    except Exception:
+        index_enabled = False
+        provider_model = None
+        embedding_dim = None
+        last_incremental_at = None
+
+    return {
+        "ok": True,
+        "command": "vector-doctor",
+        "project_id": project_id,
+        "generated_at": now_iso(),
+        "stack": stack,
+        "index": {
+            "enabled": index_enabled,
+            "provider_model": provider_model,
+            "embedding_dim": embedding_dim,
+            "last_incremental_at": last_incremental_at,
+        },
+        "vec_table": {
+            "exists": table_exists,
+            "entry_count": vec_count,
+        },
+        "queue": queue,
+    }
+
+
+def cmd_setup_vector(args, conn_or_none, config_or_none) -> dict:
+    """Create a Python venv and install vector search dependencies (optional feature)."""
+    import shutil
+    import subprocess
+
+    dry_run = getattr(args, "dry_run", False)
+    use_global = getattr(args, "use_global", False)
+    venv_path_override = getattr(args, "venv_path", None)
+    python_override = getattr(args, "python", None)
+    force = getattr(args, "force", False)
+
+    WARNINGS = [
+        "First run downloads ~90 MB of embedding model weights to ~/.cache/huggingface/",
+        "Total disk usage: ~400 MB for Python packages + ~90 MB for model weights",
+        "Initial index build may take 1-3 minutes depending on your hardware",
+        "FTS keyword search is available immediately via '.contexts/run' without this setup",
+    ]
+
+    # Determine repo root and contexts dir
+    try:
+        repo_root = find_repo_root(Path.cwd())
+    except FileNotFoundError as e:
+        error_exit("setup-vector", "NOT_INITIALIZED", "Cannot find repo root: {}".format(e))
+        return {}  # unreachable
+
+    contexts_dir = repo_root / ".contexts"
+    local_dir = contexts_dir / "local"
+
+    # Determine venv destination
+    if venv_path_override:
+        venv_dir = Path(venv_path_override).expanduser().resolve()
+    elif use_global:
+        venv_dir = Path.home() / ".contexts-vector"
+    else:
+        venv_dir = repo_root / ".venv-vector"
+
+    venv_python = venv_dir / "bin" / "python"
+    vector_path_file = local_dir / "vector_python_path"
+
+    if dry_run:
+        steps = ["create_venv", "install_deps", "save_path", "build_index"]
+        return {
+            "ok": True,
+            "command": "setup-vector",
+            "dry_run": True,
+            "venv_dir": str(venv_dir),
+            "venv_python": str(venv_python),
+            "global": use_global,
+            "steps": steps,
+            "warnings": WARNINGS,
+            "generated_at": now_iso(),
+        }
+
+    # Check if already exists (and not forcing)
+    if venv_dir.exists() and not force:
+        return {
+            "ok": True,
+            "command": "setup-vector",
+            "already_exists": True,
+            "venv_dir": str(venv_dir),
+            "venv_python": str(venv_python),
+            "path_saved": vector_path_file.exists(),
+            "message": (
+                "Vector venv already exists at {}. "
+                "Use --force to reinstall, or '.contexts/run vector-doctor' to check status."
+            ).format(venv_dir),
+            "warnings": WARNINGS,
+            "generated_at": now_iso(),
+        }
+
+    # Resolve Python interpreter
+    if python_override:
+        python_bin = python_override
+    else:
+        python_bin = shutil.which("python3.12") or shutil.which("python3.12")
+        if not python_bin:
+            # Try common paths
+            for candidate in ["/usr/bin/python3.12", "/usr/local/bin/python3.12",
+                               "/opt/homebrew/bin/python3.12"]:
+                if Path(candidate).exists():
+                    python_bin = candidate
+                    break
+        if not python_bin:
+            error_exit(
+                "setup-vector",
+                "INVALID_ARG",
+                "python3.12 not found on PATH. Use --python /path/to/python3.12 to specify it.",
+            )
+            return {}
+
+    # Verify version >= 3.12
+    try:
+        ver_result = subprocess.run(
+            [python_bin, "-c",
+             "import sys; v=sys.version_info; print('{}.{}'.format(v.major,v.minor))"],
+            capture_output=True, text=True, timeout=10,
+        )
+        ver_str = ver_result.stdout.strip()
+        major, minor = (int(x) for x in ver_str.split(".", 1))
+        if (major, minor) < (3, 12):
+            error_exit(
+                "setup-vector",
+                "INVALID_ARG",
+                "Python 3.12+ required for vector search, found {}. "
+                "Use --python to specify a compatible interpreter.".format(ver_str),
+            )
+            return {}
+    except Exception as exc:
+        error_exit("setup-vector", "INVALID_ARG",
+                   "Failed to check Python version: {}".format(exc))
+        return {}
+
+    results = []
+
+    def _run_step(step_name, cmd):
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        entry = {
+            "step": step_name,
+            "returncode": proc.returncode,
+        }
+        if proc.stdout:
+            entry["stdout"] = proc.stdout[-2000:]
+        if proc.stderr:
+            entry["stderr"] = proc.stderr[-2000:]
+        results.append(entry)
+        return proc.returncode == 0
+
+    # Step 1: create venv
+    if not _run_step("create_venv", [python_bin, "-m", "venv", str(venv_dir)]):
+        return {
+            "ok": False,
+            "command": "setup-vector",
+            "failed_step": "create_venv",
+            "results": results,
+            "warnings": WARNINGS,
+            "generated_at": now_iso(),
+        }
+
+    # Step 2: install deps
+    pip_bin = str(venv_dir / "bin" / "pip")
+    if not _run_step("install_deps", [
+        pip_bin, "install",
+        "sqlite-vec==0.1.6", "fastembed==0.7.4",
+    ]):
+        return {
+            "ok": False,
+            "command": "setup-vector",
+            "failed_step": "install_deps",
+            "results": results,
+            "warnings": WARNINGS,
+            "generated_at": now_iso(),
+        }
+
+    # Step 3: save path
+    try:
+        local_dir.mkdir(parents=True, exist_ok=True)
+        vector_path_file.write_text(str(venv_python) + "\n", encoding="utf-8")
+        results.append({"step": "save_path", "returncode": 0,
+                        "path": str(vector_path_file)})
+    except Exception as exc:
+        results.append({"step": "save_path", "returncode": 1, "stderr": str(exc)})
+        return {
+            "ok": False,
+            "command": "setup-vector",
+            "failed_step": "save_path",
+            "results": results,
+            "warnings": WARNINGS,
+            "generated_at": now_iso(),
+        }
+
+    # Step 4: build initial vector index (requires .contexts/local/context.db to exist)
+    runtime_dir = contexts_dir / "runtime"
+    _run_step("build_index", [
+        str(venv_python), str(runtime_dir),
+        "rebuild-vector-index", "--full",
+    ])
+    # build_index failure is non-fatal: DB may not be initialized yet.
+    # The user can run '.contexts/run rebuild-vector-index --full' later.
+
+    build_ok = results[-1]["returncode"] == 0
+
+    return {
+        "ok": True,
+        "command": "setup-vector",
+        "venv_dir": str(venv_dir),
+        "venv_python": str(venv_python),
+        "global": use_global,
+        "index_built": build_ok,
+        "index_note": (
+            None if build_ok
+            else "Index build skipped or failed (run '.contexts/run rebuild-vector-index --full' "
+                 "after initializing the DB with '.contexts/run init')."
+        ),
+        "results": results,
+        "warnings": WARNINGS,
+        "generated_at": now_iso(),
+    }

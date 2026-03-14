@@ -1,4 +1,32 @@
 #!/usr/bin/env bash
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Priority 0: CONTEXTS_VECTOR_PYTHON env var override
+if [ -n "$CONTEXTS_VECTOR_PYTHON" ] && [ -x "$CONTEXTS_VECTOR_PYTHON" ]; then
+    exec "$CONTEXTS_VECTOR_PYTHON" "$SCRIPT_DIR/runtime" "$@"
+fi
+
+# Priority 1: saved path written by setup-vector
+_vec_path_file="$SCRIPT_DIR/local/vector_python_path"
+if [ -f "$_vec_path_file" ]; then
+    _saved_python="$(cat "$_vec_path_file")"
+    if [ -x "$_saved_python" ]; then
+        exec "$_saved_python" "$SCRIPT_DIR/runtime" "$@"
+    fi
+fi
+
+# Priority 2: local .venv-vector/ (repo-root, legacy / manual setup)
+_local_venv="$(dirname "$SCRIPT_DIR")/.venv-vector/bin/python"
+if [ -x "$_local_venv" ]; then
+    exec "$_local_venv" "$SCRIPT_DIR/runtime" "$@"
+fi
+
+# Priority 3: global ~/.contexts-vector/
+_global_venv="$HOME/.contexts-vector/bin/python"
+if [ -x "$_global_venv" ]; then
+    exec "$_global_venv" "$SCRIPT_DIR/runtime" "$@"
+fi
+
+# Fallback: system python3 (FTS-only mode)
 exec python3 "$SCRIPT_DIR/runtime" "$@"

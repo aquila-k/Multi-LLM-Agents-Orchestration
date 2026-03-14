@@ -1,4 +1,4 @@
-"""CLI entrypoint for the .contexts runtime. Dispatches all 14 commands."""
+"""CLI entrypoint for the .contexts runtime. Dispatches all 15 commands."""
 
 import argparse
 import json
@@ -37,13 +37,17 @@ from .cli.operator import (
     cmd_list_history,
     cmd_migrate,
     cmd_rebuild_projections,
+    cmd_rebuild_vector_index,
     cmd_render_context,
     cmd_resolve_conflict,
+    cmd_setup_vector,
+    cmd_sync_vector_index,
+    cmd_vector_doctor,
 )
 from .cli.shared import add_common_args, error_exit
 from .core.config import find_repo_root, load_config, resolve_db_path
 from .core.ids import now_iso
-from .db.connection import open_db
+from .db.connection import open_db, open_db_with_vec
 
 
 def main():
@@ -77,6 +81,12 @@ def main():
     p.add_argument("--limit", type=int, default=20)
     p.add_argument("--include-history", action="store_true")
     p.add_argument("--format", choices=["json", "markdown"], default="json")
+    p.add_argument(
+        "--mode",
+        choices=["auto", "fts", "semantic", "hybrid"],
+        default="auto",
+        help="Search mode: auto (default), fts, semantic, or hybrid",
+    )
 
     p = sub.add_parser(
         "update-task-context", help="Update task/session snapshot with CAS"
@@ -86,6 +96,11 @@ def main():
     p.add_argument("--session-id")
     p.add_argument("--expected-revision", type=int, required=True)
     p.add_argument("--from-file")
+    p.add_argument(
+        "--stdin",
+        action="store_true",
+        help="Read JSON payload from stdin (default when --from-file is omitted)",
+    )
     p.add_argument("--change-reason")
     p.add_argument("--tags")
     p.add_argument("--related-files")
@@ -167,6 +182,59 @@ def main():
     add_common_args(p)
     p.add_argument("--dry-run", action="store_true")
 
+    p = sub.add_parser(
+        "sync-vector-index", help="Consume dirty queue and update vector embeddings"
+    )
+    add_common_args(p)
+    p.add_argument("--max-items", type=int, default=64)
+    p.add_argument("--retry-failed", action="store_true")
+
+    p = sub.add_parser("vector-doctor", help="Run vector stack diagnostics")
+    add_common_args(p)
+
+    p = sub.add_parser(
+        "rebuild-vector-index", help="Full or partial rebuild of vector projections and embeddings"
+    )
+    add_common_args(p)
+    p.add_argument("--full", action="store_true", help="Force full rebuild (default when no filters)")
+    p.add_argument("--since", default=None, help="ISO timestamp or revision int for partial rebuild")
+    p.add_argument("--scope", default=None, help="Filter by scope_ref prefix")
+    p.add_argument("--type", dest="entry_type", default=None, help="Filter by entry type")
+    p.add_argument("--dry-run", action="store_true", help="Count what would be processed without writing")
+    p.add_argument("--batch-size", type=int, default=32, help="Embedding batch size (default 32)")
+
+    p = sub.add_parser(
+        "setup-vector",
+        help="Install vector search dependencies (optional, enables semantic/hybrid search)",
+    )
+    add_common_args(p)
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without executing",
+    )
+    p.add_argument(
+        "--global",
+        dest="use_global",
+        action="store_true",
+        help="Install to ~/.contexts-vector/ to share across projects",
+    )
+    p.add_argument(
+        "--venv-path",
+        default=None,
+        help="Custom venv location (absolute path)",
+    )
+    p.add_argument(
+        "--python",
+        default=None,
+        help="Python interpreter to use (default: auto-detect python3.12)",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Recreate venv if it already exists",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -189,12 +257,16 @@ def main():
         "resolve-conflict": (cmd_resolve_conflict, True),
         "render-context": (cmd_render_context, False),
         "rebuild-projections": (cmd_rebuild_projections, True),
+        "sync-vector-index": (cmd_sync_vector_index, True),
+        "vector-doctor": (cmd_vector_doctor, False),
+        "rebuild-vector-index": (cmd_rebuild_vector_index, True),
+        "setup-vector": (cmd_setup_vector, False),
     }
 
     handler, needs_write = COMMAND_MAP[args.command]
 
-    # 'init' is special: handle before DB open
-    if args.command == "init":
+    PRE_DB_COMMANDS = {"init", "setup-vector"}
+    if args.command in PRE_DB_COMMANDS:
         try:
             result = handler(args, None, None)
             print(json.dumps(result, ensure_ascii=False))
@@ -233,7 +305,11 @@ def main():
     if project_id_override:
         config["project_id"] = project_id_override
 
-    conn = open_db(db_path)
+    _VECTOR_COMMANDS = {"rebuild-vector-index", "sync-vector-index", "vector-doctor", "search-memory"}
+    if args.command in _VECTOR_COMMANDS:
+        conn, _vec_loaded = open_db_with_vec(db_path)
+    else:
+        conn = open_db(db_path)
     try:
         result = handler(args, conn, config)
         print(json.dumps(result, ensure_ascii=False))

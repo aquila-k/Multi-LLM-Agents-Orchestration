@@ -10,6 +10,17 @@ from .fts import delete_fts_for_entry, sync_fts_for_entry
 from .query import fetch_active_entry, fetch_entry_by_id
 
 
+def _enqueue_vector(conn: sqlite3.Connection, entry_id: str, reason: str) -> None:
+    """Best-effort vector dirty queue enqueue. Silently skipped if table absent."""
+    try:
+        conn.execute(
+            "INSERT INTO vector_dirty_queue (entry_id, reason, queued_at) VALUES (?, ?, ?)",
+            (entry_id, reason, now_iso()),
+        )
+    except Exception:
+        pass  # table may not exist in core profile
+
+
 def insert_entry(
     conn: sqlite3.Connection,
     project_id: str,
@@ -391,6 +402,9 @@ def write_entry_transaction(
         )
 
         conn.commit()
+
+        # Enqueue for vector index update (best-effort, after commit)
+        _enqueue_vector(conn, entry_id, reason="insert" if new_revision == 1 else "update")
 
         return {
             "entry_id": entry_id,

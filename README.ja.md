@@ -163,13 +163,74 @@ collab/configs/user/
 # 設計上の判断を記録
 .contexts/run log-decision --key <key> --scope task/<id> < decision.json
 
-# 過去の記録を検索
+# 過去の記録を検索（キーワード）
 .contexts/run search-memory --query "キーワード" --limit 10
+
+# 過去の記録を検索（意味検索・ハイブリッド — ベクター検索セットアップ済みの場合に使用可能）
+.contexts/run search-memory --query "キーワード" --mode hybrid --limit 10
 
 # メンテナンス
 .contexts/run doctor          # 正常性チェック
 .contexts/run render-context  # スコープの Markdown サマリーを生成
 ```
+
+### ベクター検索（オプション）
+
+`.contexts/` は標準で **FTS5 キーワード検索**を提供する。オプションとして**ベクター（意味）検索**レイヤーを追加でき、既存の DB やコマンドには一切影響しない。
+
+| プロファイル | 必要環境 | 利用可能な検索モード |
+| --- | --- | --- |
+| **core**（標準） | Python 3.8+, SQLite | `fts` のみ |
+| **vector-enabled** | Python 3.12, `sqlite-vec`, `fastembed` | `fts`, `semantic`, `hybrid`, `auto` |
+
+#### vector-enabled プロファイルのセットアップ
+
+`.contexts/run` はすべてのコマンドに対応した統一エントリーポイント。ベクター検索をセットアップすると自動的に使用される。
+
+```bash
+# 実行内容を確認（ディスク・時間の警告表示、変更なし）
+.contexts/run setup-vector --dry-run
+
+# ローカルにインストール（.contexts/ 隣に .venv-vector/ を作成）
+.contexts/run setup-vector
+
+# グローバルにインストール（複数リポジトリ間で依存を共有、1 プロジェクトあたり約 400 MB 節約）
+.contexts/run setup-vector --global
+
+# 任意のパスにインストール
+.contexts/run setup-vector --venv-path /path/to/venv
+
+# セットアップを確認
+.contexts/run vector-doctor
+```
+
+注意事項：
+
+- 初回実行時は埋め込みモデル約 90 MB を `~/.cache/huggingface/` にダウンロード
+- 合計ディスク使用量：パッケージ約 400 MB + モデル約 90 MB
+- 初期インデックス構築：1〜3 分程度
+- FTS キーワード検索はセットアップなしで即時使用可能
+- `--global` を使用するとリポジトリ間でパッケージを共有でき、ベクターインデックスはプロジェクトごとに保持
+
+#### ベクター検索の使い方
+
+セットアップ後は、すべての検索コマンドで同じ `.contexts/run` エントリーポイントを使用する：
+
+```bash
+# auto モード（ベクター利用可能ならハイブリッド、不可なら fts）
+.contexts/run search-memory --query "なぜこの設計を選んだのか" --mode auto
+
+# 意味検索（言語・表現に依存しない）
+.contexts/run search-memory --query "認証の方針" --mode semantic
+
+# ハイブリッド検索（FTS + 意味検索を順位融合）
+.contexts/run search-memory --query "DB スキーマの決定" --mode hybrid
+
+# 書き込み後にインデックスを差分更新
+.contexts/run sync-vector-index
+```
+
+ベクター検索未セットアップの状態で `semantic` や `hybrid` を指定した場合は FTS にフォールバックし、レスポンスに `setup_hint` フィールドが追加される。
 
 ### 各エージェントでの使い方
 
@@ -236,11 +297,14 @@ collab/                     # オーケストレーションランタイム（�
   └── tests/                # ユニット・統合・stub-e2e・リグレッション
 
 .contexts/                  # コンテキスト管理ツール（単体利用可）
-  ├── run                   # CLI エントリーポイント
-  ├── runtime/              # DB・レンダリング・CLI コマンド
+  ├── run                   # 統一 CLI エントリーポイント（venv を自動検出し python3 にフォールバック）
+  ├── runtime/
+  │   └── vector/           # ベクター検索拡張（オプション）
   ├── sql/                  # マイグレーションスクリプト
   ├── schemas/              # エントリペイロードスキーマ
-  └── templates/            # レンダリングテンプレート
+  └── local/                # git 管理外; DB・設定・vector_python_path
+
+.venv-vector/               # git 管理外; setup-vector が作成するリポジトリローカル venv（オプション）
 ```
 
 ## ライセンス

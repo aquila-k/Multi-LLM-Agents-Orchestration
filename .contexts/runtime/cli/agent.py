@@ -178,7 +178,7 @@ def cmd_get_task_context(args, conn, config) -> dict:
 
 
 def cmd_search_memory(args, conn, config) -> dict:
-    """Run FTS search and return results."""
+    """Run FTS/semantic/hybrid search and return results."""
     project_id = getattr(args, "project_id", None) or config.get("project_id", "")
     query = args.query
     scope = getattr(args, "scope", None)
@@ -186,15 +186,72 @@ def cmd_search_memory(args, conn, config) -> dict:
     limit = getattr(args, "limit", 20)
     include_history = getattr(args, "include_history", False)
     fmt = getattr(args, "format", "json")
+    mode = getattr(args, "mode", "auto")
+    mode_requested = mode  # preserve original request before any resolution
 
-    raw = search_fts(
-        conn,
-        query,
-        scope_ref=scope,
-        type_filter=type_filter,
-        limit=limit,
-        include_history=include_history,
-    )
+    # Determine vector availability
+    try:
+        from ..vector.enabled import is_vector_enabled, load_sqlite_vec
+        from ..vector.provider import FastEmbedProvider
+
+        vec_loaded = load_sqlite_vec(conn)
+        vec_available = vec_loaded and is_vector_enabled(conn)
+    except Exception:
+        vec_available = False
+
+    # Resolve actual mode
+    if mode == "auto":
+        from ..vector.search import select_search_mode
+
+        mode_used = select_search_mode(query, vec_available)
+    else:
+        mode_used = mode
+
+    # Run search
+    raw = []
+    if mode_used == "fts" or not vec_available:
+        # FTS path (also the fallback for semantic/hybrid when vec unavailable)
+        raw = search_fts(
+            conn,
+            query,
+            scope_ref=scope,
+            type_filter=type_filter,
+            limit=limit,
+            include_history=include_history,
+        )
+        mode_used = "fts"
+    elif mode_used == "semantic":
+        try:
+            provider = FastEmbedProvider()
+            from ..vector.search import search_semantic
+
+            raw = search_semantic(conn, query, provider, limit=limit, scope_ref=scope)
+        except Exception:
+            raw = search_fts(
+                conn,
+                query,
+                scope_ref=scope,
+                type_filter=type_filter,
+                limit=limit,
+                include_history=include_history,
+            )
+            mode_used = "fts"
+    elif mode_used == "hybrid":
+        try:
+            provider = FastEmbedProvider()
+            from ..vector.search import search_hybrid
+
+            raw = search_hybrid(conn, query, provider, limit=limit, scope_ref=scope)
+        except Exception:
+            raw = search_fts(
+                conn,
+                query,
+                scope_ref=scope,
+                type_filter=type_filter,
+                limit=limit,
+                include_history=include_history,
+            )
+            mode_used = "fts"
 
     formatted = format_search_results(raw, format_=fmt)
 
@@ -203,8 +260,17 @@ def cmd_search_memory(args, conn, config) -> dict:
         "command": "search-memory",
         "project_id": project_id,
         "generated_at": now_iso(),
+        "mode_used": mode_used,
     }
     result.update(formatted)
+
+    if mode_requested in ("semantic", "hybrid") and mode_used == "fts" and not vec_available:
+        result["vector_unavailable"] = True
+        result["setup_hint"] = (
+            "Vector search is not available. "
+            "Run '.contexts/run setup-vector' to enable semantic/hybrid search. "
+            "Use '.contexts/run setup-vector --dry-run' to see disk/time requirements first."
+        )
 
     return result
 
@@ -216,7 +282,11 @@ def cmd_update_task_context(args, conn, config) -> dict:
     session_id = getattr(args, "session_id", None)
     expected_revision = args.expected_revision
     from_file = getattr(args, "from_file", None)
+    use_stdin = getattr(args, "stdin", False)
     change_reason = getattr(args, "change_reason", None)
+
+    if from_file and use_stdin:
+        raise InvalidArg("Use either --from-file or --stdin, not both")
 
     # Parse optional JSON array args
     tags = None
