@@ -38,13 +38,18 @@ plan/
 *config-state.md
 *config-state.yaml
 
-# ---- Context Manager local instance (DB, config, cache) ----
+# ---- Context Manager (project-specific data only) ----
 .contexts/local/
+.contexts/cache/
+.contexts/exports/
+.contexts/context.db
 
-# ---- collab runtime data (project-specific, not tool code) ----
-collab/artifacts/tasks/
-collab/state/
+# ---- agentorch runtime data (project-specific, not tool code) ----
+.agentorch/artifacts/
+.agentorch/state/
+agentorch_ctx/artifacts/tasks/
+agentorch_ctx/state/
 
-# collab facts — keep READMEs, exclude runtime probe/env data
-collab/facts/**/*.json
-collab/facts/*.json
+# agentorch_ctx facts — keep READMEs, exclude runtime probe/env data
+agentorch_ctx/facts/**/*.json
+agentorch_ctx/facts/*.json
