@@ -272,6 +272,31 @@ class ProviderAdaptersUnitTest(unittest.TestCase):
                 adapter._build_live_env(adapter_request=adapter_request), {}
             )
 
+    def test_codex_live_validation_can_skip_git_repo_check(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            adapter = get_provider_adapter("codex", root_dir=root, live_mode=True)
+            adapter_request = {
+                "model": "gpt-5.1-codex-mini",
+                "providerOptions": {
+                    "model": "codex-fast",
+                    "skipGitRepoCheck": True,
+                },
+                "session": {"resolvedMode": "fresh", "resumeRef": ""},
+                "phase": "plan",
+                "promptText": "hello",
+                "summary": "hello",
+            }
+
+            cmd, stdin_bytes, output_file = adapter._build_live_command_and_input(
+                adapter_request=adapter_request,
+                tmp_dir=root,
+            )
+
+            self.assertIn("--skip-git-repo-check", cmd)
+            self.assertEqual(stdin_bytes, b"hello")
+            self.assertEqual(output_file, root / "codex-output.txt")
+
     def test_gemini_live_falls_back_from_31_preview_to_3_preview(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -1,0 +1,80 @@
+{
+  "$schema": "../schemas/phase.schema.json",
+  "version": 1,
+  "phase": "review",
+  "$presets": {
+    "codex-fast": {
+      "provider": "codex",
+      "model": "gpt-5.1-codex-mini",
+      "effort": "low"
+    },
+    "codex-standard": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "mid"
+    },
+    "codex-quality": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "high"
+    },
+    "copilot-quality": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "high"
+    },
+    "gemini-fast": {
+      "provider": "gemini",
+      "model": "flash",
+      "effort": "medium"
+    },
+    "gemini-quality": {
+      "provider": "gemini",
+      "model": "pro",
+      "effort": "high"
+    },
+    "copilot-fast": {
+      "provider": "copilot",
+      "model": "claude-haiku-4.5",
+      "effort": "low"
+    }
+  },
+  "default": { "$preset": "codex-standard" },
+  "strategies": {
+    "COLLAB_REVIEW_PRESET_LITE": {
+      "default": { "$preset": "codex-fast" },
+      "steps": {
+        "R0_lite_review": { "$preset": "gemini-fast" }
+      }
+    },
+    "COLLAB_REVIEW_MODE_A": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "R0_collect_task_artifacts": { "$preset": "copilot-quality" },
+        "R1_task_review": { "$preset": "gemini-quality" }
+      }
+    },
+    "COLLAB_REVIEW_MODE_B": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "R0_repo_intake": { "$preset": "copilot-quality" },
+        "R1_standalone_review": { "$preset": "gemini-quality" }
+      }
+    },
+    "COLLAB_REVIEW_PRESET_STANDARD": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "R0_standard_review": { "$preset": "gemini-quality" },
+        "R1_verify_findings": { "$preset": "codex-fast" }
+      }
+    },
+    "COLLAB_REVIEW_PRESET_STRICT": {
+      "default": { "$preset": "codex-quality" },
+      "steps": {
+        "R0_strict_review": { "$preset": "gemini-quality" },
+        "R1_cross_verify": { "$preset": "codex-quality" },
+        "R2_consolidate": { "$preset": "gemini-quality" }
+      }
+    }
+  }
+}

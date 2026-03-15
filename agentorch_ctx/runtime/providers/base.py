@@ -838,6 +838,9 @@ def _build_exec_env() -> dict[str, str]:
     env = dict(os.environ)
     current_path = env.get("PATH", "")
     extra_paths = []
+    repo_root = Path(__file__).resolve().parents[3]
+    if (repo_root / "agentorch").is_file():
+        extra_paths.append(str(repo_root))
     # NVM node versions (all installed versions, newest first).
     nvm_versions_dir = Path.home() / ".nvm" / "versions" / "node"
     if nvm_versions_dir.is_dir():

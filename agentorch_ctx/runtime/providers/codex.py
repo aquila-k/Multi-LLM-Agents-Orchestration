@@ -63,6 +63,8 @@ class CodexAdapter(ProviderAdapter):
             "--sandbox",
             sandbox_mode,
         ]
+        if adapter_request.get("providerOptions", {}).get("skipGitRepoCheck"):
+            shared_args.append("--skip-git-repo-check")
         if reasoning_effort:
             shared_args += ["-c", f"model_reasoning_effort={reasoning_effort}"]
         if phase == "impl":

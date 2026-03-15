@@ -1,0 +1,86 @@
+{
+  "$schema": "../schemas/phase.schema.json",
+  "version": 1,
+  "phase": "plan",
+  "$presets": {
+    "codex-fast": {
+      "provider": "codex",
+      "model": "gpt-5.1-codex-mini",
+      "effort": "low"
+    },
+    "codex-standard": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "mid"
+    },
+    "codex-quality": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "high"
+    },
+    "codex-frontier": {
+      "provider": "codex",
+      "model": "gpt-5.4",
+      "effort": "xhigh"
+    },
+    "copilot-quality": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "high"
+    },
+    "copilot-survey": {
+      "provider": "copilot",
+      "model": "claude-haiku-4.5",
+      "effort": "low"
+    },
+    "gemini-fast": {
+      "provider": "gemini",
+      "model": "flash",
+      "effort": "medium"
+    },
+    "gemini-quality": {
+      "provider": "gemini",
+      "model": "pro",
+      "effort": "high"
+    },
+    "copilot-fast": {
+      "provider": "copilot",
+      "model": "claude-haiku-4.5",
+      "effort": "low"
+    }
+  },
+  "default": { "$preset": "codex-standard" },
+  "strategies": {
+    "COLLAB_PLAN_QUESTIONS_ONLY": {
+      "default": { "$preset": "codex-fast" },
+      "steps": {
+        "P0_questions": { "$preset": "copilot-quality" },
+        "P1_question_summary": { "$preset": "codex-fast" }
+      }
+    },
+    "COLLAB_PLAN_MINIMAL": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "P0_quick_survey": { "$preset": "copilot-survey" },
+        "P1_minimal_plan": { "$preset": "gemini-fast" }
+      }
+    },
+    "COLLAB_PLAN_FULL": {
+      "default": { "$preset": "codex-quality" },
+      "steps": {
+        "P1_preflight_questions": { "$preset": "copilot-quality" },
+        "R0_repo_survey": { "$preset": "codex-fast" },
+        "FINAL_plan": { "$preset": "gemini-quality" }
+      }
+    },
+    "COLLAB_PLAN_THOROUGH": {
+      "default": { "$preset": "codex-frontier" },
+      "steps": {
+        "P0_risk_scan": { "$preset": "codex-quality" },
+        "P1_parallel_enrich": { "$preset": "gemini-fast" },
+        "P2_consolidate": { "$preset": "codex-frontier" },
+        "P3_final_plan": { "$preset": "gemini-quality" }
+      }
+    }
+  }
+}

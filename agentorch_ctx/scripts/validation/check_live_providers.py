@@ -41,6 +41,12 @@ VALIDATION_MODELS = {
     "copilot": "gpt-5-mini",
 }
 
+VALIDATION_PROVIDER_OPTIONS = {
+    "codex": {"reasoningEffort": "low", "skipGitRepoCheck": True},
+    "gemini": {},
+    "copilot": {},
+}
+
 
 def _isoformat() -> str:
     return (
@@ -97,6 +103,10 @@ def build_minimal_adapter_request(
 
     bundle = load_config_bundle(root_dir)
     provider_cfg = bundle.providers.get(provider, {})
+    provider_options = {
+        "model": f"{provider}-fast",
+        **VALIDATION_PROVIDER_OPTIONS.get(provider, {}),
+    }
 
     return {
         "schemaVersion": "1.0.0",
@@ -110,8 +120,12 @@ def build_minimal_adapter_request(
         "profile": f"{provider}-primary",
         "modelRef": f"{provider}-fast",
         "model": model_id,
-        "providerOptions": {"model": f"{provider}-fast"},
-        "supportedOptionKeys": ["model"],
+        "providerOptions": provider_options,
+        "supportedOptionKeys": [
+            "model",
+            "reasoningEffort",
+            "skipGitRepoCheck",
+        ],
         "timeouts": provider_cfg.get("timeoutDefaults", {"defaultMs": 120000}),
         "retryPolicy": provider_cfg.get("retryDefaults", {}),
         "outputContract": {

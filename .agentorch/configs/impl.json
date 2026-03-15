@@ -1,0 +1,95 @@
+{
+  "$schema": "../schemas/phase.schema.json",
+  "version": 1,
+  "phase": "impl",
+  "$presets": {
+    "codex-fast": {
+      "provider": "codex",
+      "model": "gpt-5.1-codex-mini",
+      "effort": "low"
+    },
+    "codex-standard": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "mid"
+    },
+    "codex-quality": {
+      "provider": "codex",
+      "model": "gpt-5.3-codex",
+      "effort": "high"
+    },
+    "codex-frontier": {
+      "provider": "codex",
+      "model": "gpt-5.4",
+      "effort": "xhigh"
+    },
+    "copilot-standard": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "high"
+    },
+    "copilot-fast": {
+      "provider": "copilot",
+      "model": "claude-haiku-4.5",
+      "effort": "low"
+    },
+    "copilot-one-shot": {
+      "provider": "copilot",
+      "model": "claude-opus-4.6",
+      "effort": "xhigh"
+    },
+    "copilot-quality": {
+      "provider": "copilot",
+      "model": "claude-sonnet-4.6",
+      "effort": "xhigh"
+    },
+    "gemini-standard": {
+      "provider": "gemini",
+      "model": "flash",
+      "effort": "high"
+    }
+  },
+  "default": { "$preset": "codex-standard" },
+  "strategies": {
+    "COLLAB_IMPL_BATCH_SHOT": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "I0_scope": { "$preset": "codex-fast" },
+        "I1_batch_generate": { "$preset": "codex-quality" },
+        "I2_verify": { "$preset": "gemini-standard" }
+      }
+    },
+    "COLLAB_IMPL_PATCH_FIRST": {
+      "default": { "$preset": "codex-quality" },
+      "steps": {
+        "I0_analyze": { "$preset": "codex-fast" },
+        "I2_generate": { "$preset": "codex-quality" },
+        "I4_gate": { "$preset": "codex-fast" },
+        "I5_shield": { "$preset": "gemini-standard" }
+      }
+    },
+    "COLLAB_IMPL_SPEC_PATCH": {
+      "default": { "$preset": "codex-quality" },
+      "steps": {
+        "I0_spec_lock": { "$preset": "copilot-standard" },
+        "I1_patch": { "$preset": "codex-quality" },
+        "I2_verify": { "$preset": "gemini-standard" }
+      }
+    },
+    "COLLAB_IMPL_FILE_BY_FILE": {
+      "default": { "$preset": "codex-standard" },
+      "steps": {
+        "I0_partition": { "$preset": "copilot-standard" },
+        "I1_file_pass": { "$preset": "codex-standard" },
+        "I2_converge": { "$preset": "codex-fast" }
+      }
+    },
+    "COLLAB_IMPL_SHIELD_FIX": {
+      "default": { "$preset": "codex-fast" },
+      "steps": {
+        "I0_shield_diagnose": { "$preset": "gemini-standard" },
+        "I1_shield_fix": { "$preset": "codex-fast" }
+      }
+    }
+  }
+}
