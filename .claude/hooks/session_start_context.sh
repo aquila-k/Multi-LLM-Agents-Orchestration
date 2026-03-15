@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse hook: periodically re-inject stored context as valid hook JSON.
+# SessionStart hook: recover the active task ID and inject stored context.
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 CONTEXTS_RUN="$REPO_ROOT/.contexts/run"
@@ -28,25 +28,23 @@ resolve_task_id() {
   return 1
 }
 
-# Throttle: only run once per 5 minutes.
-THROTTLE_FILE="${TMPDIR:-/tmp}/contexts_hook_throttle"
-if [[ -f "$THROTTLE_FILE" ]]; then
-  last_run=$(cat "$THROTTLE_FILE" 2>/dev/null || echo 0)
-  now=$(date +%s)
-  if ((now - last_run < 300)); then
-    exit 0
-  fi
-fi
-date +%s >"$THROTTLE_FILE"
-
 TASK_ID="$(resolve_task_id || true)"
-[ -n "$TASK_ID" ] || exit 0
 
-CONTEXT_MARKDOWN="$($CONTEXTS_RUN get-task-context \
-  --task-id "$TASK_ID" \
-  --include-project \
-  --max-bytes "${CONTEXTS_BYTE_BUDGET:-8000}" \
-  --format markdown 2>/dev/null || true)"
+if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "$TASK_ID" ]; then
+  printf 'export CONTEXTS_CURRENT_TASK_ID=%q\n' "$TASK_ID" >> "$CLAUDE_ENV_FILE"
+fi
+
+if [ -n "$TASK_ID" ]; then
+  CONTEXT_MARKDOWN="$($CONTEXTS_RUN get-task-context \
+    --task-id "$TASK_ID" \
+    --include-project \
+    --max-bytes "${CONTEXTS_BYTE_BUDGET:-8000}" \
+    --format markdown 2>/dev/null || true)"
+else
+  CONTEXT_MARKDOWN="$($CONTEXTS_RUN get-project-context \
+    --max-bytes "${CONTEXTS_BYTE_BUDGET:-8000}" \
+    --format markdown 2>/dev/null || true)"
+fi
 
 [ -n "$CONTEXT_MARKDOWN" ] || exit 0
 
@@ -63,7 +61,7 @@ print(
         {
             "suppressOutput": True,
             "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
+                "hookEventName": "SessionStart",
                 "additionalContext": context,
             },
         }

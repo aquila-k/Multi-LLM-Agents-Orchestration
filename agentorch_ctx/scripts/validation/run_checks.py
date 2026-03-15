@@ -128,9 +128,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # Final release gate evaluation.
     print("\n--- Release Gate ---")
+    gate_result: dict = {}
     try:
         gate_mod = _load_module("release_gate")
-        gate_result = gate_mod.evaluate()
+        gate_result = gate_mod.evaluate(require_live_providers=not args.skip_live)
         for gate in gate_result.get("gates", []):
             g_name = gate["gate"]
             passed = gate.get("passed", False)
@@ -158,6 +159,8 @@ def main(argv: list[str] | None = None) -> int:
     print()
     if gate_blocked:
         print("OUTCOME: LIVE ACTIVATION BLOCKED")
+    elif gate_result.get("deferredObligations"):
+        print("OUTCOME: STUB-SAFE VALIDATION CLEAR")
     else:
         print("OUTCOME: LIVE ACTIVATION CLEAR")
     print(f"Evidence: {PROBE_DIR}")

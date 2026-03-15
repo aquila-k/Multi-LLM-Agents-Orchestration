@@ -2,7 +2,7 @@
 """Release Gate for Live CLI Activation.
 
 Checks whether all required validation checks have been completed and recorded
-in agentorch_ctx/facts/probe-results/. Reports open obligations and blocks
+in <data-root>/facts/probe-results/. Reports open obligations and blocks
 live CLI activation until all gate conditions are met.
 
 Gate conditions:
@@ -14,7 +14,7 @@ Gate conditions:
   6. Provider-specific output discipline confirmed
   7. Any remaining provider-specific gaps documented as explicit limitations
 
-Evidence is written to agentorch_ctx/facts/probe-results/check-release-gate.json.
+Evidence is written to <data-root>/facts/probe-results/check-release-gate.json.
 """
 
 from __future__ import annotations
@@ -87,17 +87,21 @@ def check_entrypoint() -> dict:
     }
 
 
-def check_live_providers() -> dict:
+def check_live_providers(*, required: bool = True) -> dict:
     """Gate 2: At least one primary provider adapter validated live."""
     probe = _load_probe("check-live-providers.json")
     if probe is None:
-        return {
+        gate = {
             "gate": "live_providers",
             "description": "At least one provider adapter live-validated",
             "status": "not_run",
             "passed": False,
             "obligation": "Run agentorch_ctx/scripts/validation/check_live_providers.py to generate evidence.",
         }
+        if not required:
+            gate["deferred"] = True
+            gate["notes"] = "Live provider evidence deferred for stub-safe validation."
+        return gate
     results = probe.get("results", [])
     passed_providers = [r["provider"] for r in results if r.get("passed")]
     skipped_providers = [
@@ -186,7 +190,7 @@ def check_artifacts() -> dict:
     }
 
 
-def check_output_discipline() -> dict:
+def check_output_discipline(*, required: bool = True) -> dict:
     """Gate 6: Provider-specific output discipline validated.
 
     Checks that live execution evidence confirms stdout/stderr separation for each
@@ -194,13 +198,19 @@ def check_output_discipline() -> dict:
     """
     probe = _load_probe("check-live-providers.json")
     if probe is None:
-        return {
+        gate = {
             "gate": "output_discipline",
             "description": "stdout/stderr separation for codex, gemini, copilot",
             "status": "not_run",
             "passed": False,
             "obligation": "check-live-providers.json must be present (run check_live_providers.py first).",
         }
+        if not required:
+            gate["deferred"] = True
+            gate["notes"] = [
+                "Deferred until live provider validation is run in a connected environment."
+            ]
+        return gate
     results = probe.get("results", [])
     run_results = [r for r in results if r.get("outcome") not in {"skipped", None}]
     notes = []
@@ -229,18 +239,18 @@ def check_output_discipline() -> dict:
     }
 
 
-def evaluate() -> dict:
+def evaluate(*, require_live_providers: bool = True) -> dict:
     """Evaluate all release gate conditions and write evidence."""
     PROBE_DIR.mkdir(parents=True, exist_ok=True)
 
     gates = [
         check_stub_e2e_gate(),
         check_entrypoint(),
-        check_live_providers(),
+        check_live_providers(required=require_live_providers),
         check_resume(),
         check_review_harden(),
         check_artifacts(),
-        check_output_discipline(),
+        check_output_discipline(required=require_live_providers),
     ]
 
     required_gates = [g for g in gates if not g.get("deferred", False)]
@@ -252,7 +262,15 @@ def evaluate() -> dict:
             "gate": g["gate"],
             "obligation": g.get("obligation") or g.get("description"),
         }
-        for g in gates
+        for g in required_gates
+        if not g.get("passed", False)
+    ]
+    deferred_obligations = [
+        {
+            "gate": g["gate"],
+            "obligation": g.get("obligation") or g.get("description"),
+        }
+        for g in deferred_gates
         if not g.get("passed", False)
     ]
 
@@ -265,11 +283,16 @@ def evaluate() -> dict:
         "requiredGatesAllPassed": required_all_passed,
         "deferredGateCount": len(deferred_gates),
         "openObligations": open_obligations,
+        "deferredObligations": deferred_obligations,
         "gates": gates,
         "summary": (
-            "LIVE ACTIVATION CLEAR"
-            if not live_activation_blocked
-            else f"BLOCKED: {len(open_obligations)} open obligation(s)"
+            f"BLOCKED: {len(open_obligations)} open obligation(s)"
+            if live_activation_blocked
+            else (
+                f"STUB-SAFE CLEAR: {len(deferred_obligations)} deferred gate(s)"
+                if deferred_obligations
+                else "LIVE ACTIVATION CLEAR"
+            )
         ),
     }
     out_path = PROBE_DIR / "check-release-gate.json"
@@ -306,6 +329,11 @@ if __name__ == "__main__":
         print()
         print("Open Obligations:")
         for ob in result["openObligations"]:
+            print(f"  - {ob['gate']}: {ob['obligation']}")
+    if result.get("deferredObligations"):
+        print()
+        print("Deferred Obligations:")
+        for ob in result["deferredObligations"]:
             print(f"  - {ob['gate']}: {ob['obligation']}")
     print()
     print(f"Evidence: {PROBE_DIR / 'check-release-gate.json'}")

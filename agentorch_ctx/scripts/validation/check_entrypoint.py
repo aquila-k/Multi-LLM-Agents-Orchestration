@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Entrypoint and Config Resolution Validation.
 
-Validates that the scripts/run entrypoint works without any agent-collab/ dependency,
-that standalone config loads correctly, and that PATH/preflight detection
-works as expected.
+Validates that the packaged ``agentorch_ctx/scripts/run`` entrypoint works
+without any legacy layout dependency, that standalone config loads correctly,
+and that PATH/preflight detection works as expected.
 
 Does NOT require live provider CLI execution.
-Evidence is written to agentorch_ctx/facts/probe-results/check-entrypoint.json.
+Evidence is written to <data-root>/facts/probe-results/check-entrypoint.json.
 """
 
 from __future__ import annotations
@@ -20,11 +20,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
-from agentorch_ctx.runtime.pathing import resolve_data_root  # noqa: E402
+from agentorch_ctx.runtime.pathing import package_root, resolve_data_root  # noqa: E402
 
 COLLAB_ROOT = resolve_data_root(REPO_ROOT)
 PROBE_DIR = COLLAB_ROOT / "facts" / "probe-results"
-RUN_SCRIPT = COLLAB_ROOT / "scripts" / "run"
+RUN_SCRIPT = package_root() / "scripts" / "run"
 
 
 def _isoformat() -> str:
@@ -37,7 +37,7 @@ def _isoformat() -> str:
 
 
 def validate_entrypoint_help() -> dict:
-    """Verify scripts/run --help works."""
+    """Verify the bundled run helper responds to --help."""
     result = subprocess.run(
         [sys.executable, str(RUN_SCRIPT), "--help"],
         capture_output=True,
@@ -46,17 +46,17 @@ def validate_entrypoint_help() -> dict:
     )
     return {
         "check": "entrypoint_help",
-        "command": f"python3 {RUN_SCRIPT.name} --help",
+        "command": f"python3 {RUN_SCRIPT} --help",
         "exit_code": result.returncode,
         "stdout_snippet": result.stdout.decode("utf-8", errors="replace")[:1000],
         "stderr_snippet": result.stderr.decode("utf-8", errors="replace")[:500],
         "passed": result.returncode == 0,
-        "notes": "scripts/run --help should exit 0 with usage info.",
+        "notes": "agentorch_ctx/scripts/run --help should exit 0 with usage info.",
     }
 
 
 def validate_config_resolution(workspace_root: Path) -> dict:
-    """Verify standalone config loads without agent-collab/ paths."""
+    """Verify standalone config loads without legacy layout paths."""
     sys.path.insert(0, str(REPO_ROOT))
     from agentorch_ctx.runtime.config_loader import load_config_bundle
     from agentorch_ctx.runtime.pathing import resolve_runtime_paths
@@ -81,7 +81,7 @@ def validate_config_resolution(workspace_root: Path) -> dict:
                 and not agent_collab_leak
                 and "agent-collab" not in config_root_str
             ),
-            "notes": "Config must load from agentorch_ctx/ (or .agentorch/), never from agent-collab/.",
+            "notes": "Config must load from agentorch_ctx/ (or .agentorch/), never from a removed legacy layout.",
         }
     except Exception as exc:
         return {

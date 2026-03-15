@@ -8,7 +8,7 @@
 | **コンテキスト管理**     | `agentorch ctx`    | タスクの知識・判断・スナップショットを SQLite DB で永続化            |
 | **タスクレジストリ**     | `agentorch task`   | アクティブなタスク・プロバイダー参加・親子タスク階層を追跡           |
 
-2 つは連携することで効果を発揮するが、それぞれ単体でも利用できる。
+3 つは連携することで効果を発揮するが、それぞれ単体でも利用できる。
 
 ---
 
@@ -32,7 +32,7 @@ agentorch doctor
 ### uv を使う場合
 
 ```bash
-uv pip install -e "git+https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git
+uv pip install "git+https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git"
 ```
 
 ### 前提条件
@@ -58,7 +58,7 @@ agentorch init                # 全セットアップ: 設定・コンテキス�
 
 - `.agentorch/configs/` — オーケストレーション設定（編集可能）
 - `.contexts/local/context.db` — コンテキストDB（gitignore 済み）
-- `.claude/skills/`, `.agents/skills/`, `.github/instructions/` — 各エージェント用指示書
+- `.claude/skills/`, `.agent/skills/`, `.github/instructions/` — 各エージェント用指示書
 - `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` — エージェント指示セクション追記
 
 個別に初期化することも可能:
@@ -206,7 +206,7 @@ agentorch task check                                      # stale タスク検�
 | エージェント | 生成ファイル                                                                       |
 | ------------ | ---------------------------------------------------------------------------------- |
 | Claude Code  | `.claude/skills/agentorch-{collab,ctx}/`, `.claude/rules/`, `CLAUDE.md` セクション |
-| Codex        | `.agents/skills/agentorch-ctx/`, `AGENTS.md` セクション                            |
+| Codex        | `.agent/skills/agentorch-ctx/`, `AGENTS.md` セクション                             |
 | Copilot      | `.github/instructions/agentorch-ctx.instructions.md`                               |
 | Gemini       | `GEMINI.md` セクション                                                             |
 

@@ -46,6 +46,7 @@ plan/
 
 # ---- agentorch runtime data (project-specific, not tool code) ----
 .agentorch/artifacts/
+.agentorch/facts/probe-results/
 .agentorch/state/
 agentorch_ctx/artifacts/tasks/
 agentorch_ctx/state/

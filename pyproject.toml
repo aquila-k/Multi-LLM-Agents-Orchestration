@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Multi-LLM agent orchestration CLI — orchestrate Gemini, Codex, and Copilot for plan/impl/review/harden workflows"
 readme = "README.md"
 license = { text = "MIT" }
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "pyyaml>=6.0",

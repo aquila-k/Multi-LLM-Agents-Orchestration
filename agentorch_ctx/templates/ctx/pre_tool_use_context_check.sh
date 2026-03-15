@@ -28,7 +28,6 @@ resolve_task_id() {
   return 1
 }
 
-# Throttle: only run once per 5 minutes.
 THROTTLE_FILE="${TMPDIR:-/tmp}/contexts_hook_throttle"
 if [[ -f "$THROTTLE_FILE" ]]; then
   last_run=$(cat "$THROTTLE_FILE" 2>/dev/null || echo 0)

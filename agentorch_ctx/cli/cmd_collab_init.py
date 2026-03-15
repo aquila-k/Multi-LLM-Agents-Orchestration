@@ -12,6 +12,7 @@ _PKG_CONFIGS_USER = Path(__file__).resolve().parents[1] / "configs" / "user"
 _GITIGNORE_BLOCK = """
 # agentorch-ctx generated data
 .agentorch/artifacts/
+.agentorch/facts/probe-results/
 .agentorch/state/
 """
 
@@ -76,7 +77,7 @@ def run(target_dir: Path | None = None, *, force: bool = False) -> int:
     # --- Write .agentorch/.gitignore ---
     inner_gi = agentorch_dir / ".gitignore"
     if not inner_gi.exists() or force:
-        inner_gi.write_text("artifacts/\nstate/\n", encoding="utf-8")
+        inner_gi.write_text("artifacts/\nfacts/probe-results/\nstate/\n", encoding="utf-8")
         print(f"  [ok]   {inner_gi.relative_to(repo_root)}")
 
     # --- Update repo root .gitignore ---

@@ -9,7 +9,7 @@ Validates the composed review+harden execution path and artifact separation:
   5. with-harden entry constraint - with_harden=true rejected for non-review intents
 
 Does NOT require live provider CLI execution.
-Evidence is written to agentorch_ctx/facts/probe-results/check-review-harden.json.
+Evidence is written to <data-root>/facts/probe-results/check-review-harden.json.
 """
 
 from __future__ import annotations

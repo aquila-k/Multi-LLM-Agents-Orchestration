@@ -6,6 +6,7 @@ per-agent instruction files (CLAUDE.md, AGENTS.md, GEMINI.md, skills, rules, etc
 
 from __future__ import annotations
 
+import json
 import fcntl
 import os
 import shutil
@@ -89,6 +90,7 @@ PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}" exec python3 -m agentorch
 _GITIGNORE_ENTRIES = """
 # agentorch generated data (gitignored by agentorch init)
 .agentorch/artifacts/
+.agentorch/facts/probe-results/
 .agentorch/state/
 .contexts/local/
 .contexts/cache/
@@ -189,6 +191,86 @@ def _ensure_contexts_run(repo_root: Path, *, force: bool = False) -> None:
         print("  [ok]   .contexts/run")
 
 
+def ensure_claude_ctx_hooks(repo_root: Path) -> None:
+    """Merge the ctx Claude hooks into .claude/settings.json."""
+    settings_path = repo_root / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        data = (
+            json.loads(settings_path.read_text(encoding="utf-8"))
+            if settings_path.exists()
+            else {}
+        )
+    except json.JSONDecodeError as exc:
+        print(f"  [warn] could not parse .claude/settings.json: {exc}", file=sys.stderr)
+        return
+
+    if not isinstance(data, dict):
+        print("  [warn] .claude/settings.json must contain a JSON object", file=sys.stderr)
+        return
+
+    hooks = data.setdefault("hooks", {})
+    if not isinstance(hooks, dict):
+        print("  [warn] .claude/settings.json hooks must be a JSON object", file=sys.stderr)
+        return
+
+    desired = {
+        "SessionStart": "bash .claude/hooks/session_start_context.sh",
+        "PreToolUse": "bash .claude/hooks/pre_tool_use_context_check.sh",
+        "Stop": "bash .claude/hooks/stop_context_save.sh",
+    }
+
+    changed = False
+    for event_name, command in desired.items():
+        entries = hooks.setdefault(event_name, [])
+        if not isinstance(entries, list):
+            print(
+                f"  [warn] .claude/settings.json hooks.{event_name} must be an array",
+                file=sys.stderr,
+            )
+            continue
+
+        already_present = False
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            handlers = entry.get("hooks", [])
+            if not isinstance(handlers, list):
+                continue
+            for handler in handlers:
+                if (
+                    isinstance(handler, dict)
+                    and handler.get("type") == "command"
+                    and handler.get("command") == command
+                ):
+                    already_present = True
+                    break
+            if already_present:
+                break
+
+        if already_present:
+            continue
+
+        entries.append(
+            {
+                "matcher": "*",
+                "hooks": [{"type": "command", "command": command}],
+            }
+        )
+        changed = True
+
+    if not settings_path.exists() or changed:
+        _safe_write_guard(settings_path)
+        settings_path.write_text(
+            json.dumps(data, indent=2, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+        print("  [ok]   .claude/settings.json (ctx hooks ensured)")
+    else:
+        print("  [skip] .claude/settings.json (ctx hooks already present)")
+
+
 def _ensure_gitignore(repo_root: Path) -> None:
     """Append agentorch entries to .gitignore if not already present."""
     gi = repo_root / ".gitignore"
@@ -267,6 +349,29 @@ def run_ctx_init(repo_root: Path, *, force: bool = False) -> int:
     print()
     print("  --- ctx: agent instructions ---")
 
+    _install_template(
+        repo_root,
+        ".claude/hooks/session_start_context.sh",
+        "ctx/session_start_context.sh",
+        force=force,
+        executable=True,
+    )
+    _install_template(
+        repo_root,
+        ".claude/hooks/pre_tool_use_context_check.sh",
+        "ctx/pre_tool_use_context_check.sh",
+        force=force,
+        executable=True,
+    )
+    _install_template(
+        repo_root,
+        ".claude/hooks/stop_context_save.sh",
+        "ctx/stop_context_save.sh",
+        force=force,
+        executable=True,
+    )
+    ensure_claude_ctx_hooks(repo_root)
+
     # Claude Code: skill + rules + CLAUDE.md section
     _install_template(
         repo_root,
@@ -292,7 +397,7 @@ def run_ctx_init(repo_root: Path, *, force: bool = False) -> int:
     # Codex: skill + AGENTS.md section
     _install_template(
         repo_root,
-        ".agents/skills/agentorch-ctx/SKILL.md",
+        ".agent/skills/agentorch-ctx/SKILL.md",
         "ctx/codex_skill.md",
         force=force,
     )
@@ -403,7 +508,7 @@ def run(target_dir: Path | None = None, *, force: bool = False) -> int:
         print("  Context DB            : .contexts/local/context.db")
         print("  Claude Code skills    : .claude/skills/agentorch-{collab,ctx}/")
         print("  Claude Code rules     : .claude/rules/agentorch-{collab,ctx}.md")
-        print("  Codex skill           : .agents/skills/agentorch-ctx/")
+        print("  Codex skill           : .agent/skills/agentorch-ctx/")
         print("  Copilot instructions  : .github/instructions/agentorch-ctx.instructions.md")
         print("  CLAUDE.md / AGENTS.md / GEMINI.md sections appended")
         print()

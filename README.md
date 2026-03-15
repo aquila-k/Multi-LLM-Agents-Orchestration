@@ -1,10 +1,10 @@
 # Multi-LLM Agents Orchestration
 
-[日本語](docs/README/README.ja.md)
+[日本語](README.ja.md)
 
 A task orchestration runtime that routes work across multiple LLM providers (Codex, Copilot, Gemini) with structured phases, budget controls, and full artifact traceability.
 
-This repository provides two independent tools packaged as a single CLI:
+This repository provides three related tools packaged as a single CLI:
 
 | Tool               | CLI                | Purpose                                                                      |
 | ------------------ | ------------------ | ---------------------------------------------------------------------------- |
@@ -37,7 +37,7 @@ agentorch doctor
 ### Using uv
 
 ```bash
-uv pip install -e "git+https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git
+uv pip install "git+https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git"
 ```
 
 ### Prerequisites
@@ -63,7 +63,7 @@ This creates:
 
 - `.agentorch/configs/` — orchestration settings (editable)
 - `.contexts/local/context.db` — context memory database (gitignored)
-- `.claude/skills/`, `.agents/skills/`, `.github/instructions/` — per-agent instructions
+- `.claude/skills/`, `.agent/skills/`, `.github/instructions/` — per-agent instructions
 - `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` — agent instruction sections appended
 
 You can also initialize each component separately:
@@ -272,7 +272,7 @@ agentorch task check
 | Agent       | Files generated                                                                 |
 | ----------- | ------------------------------------------------------------------------------- |
 | Claude Code | `.claude/skills/agentorch-{collab,ctx}/`, `.claude/rules/`, `CLAUDE.md` section |
-| Codex       | `.agents/skills/agentorch-ctx/`, `AGENTS.md` section                            |
+| Codex       | `.agent/skills/agentorch-ctx/`, `AGENTS.md` section                             |
 | Copilot     | `.github/instructions/agentorch-ctx.instructions.md`                            |
 | Gemini      | `GEMINI.md` section                                                             |
 

@@ -9,7 +9,7 @@ Validates that:
   5. ArtifactConsistencyChecker validates a real phase run
 
 Does NOT require live provider CLI execution.
-Evidence is written to agentorch_ctx/facts/probe-results/check-artifacts.json.
+Evidence is written to <data-root>/facts/probe-results/check-artifacts.json.
 """
 
 from __future__ import annotations

@@ -9,7 +9,7 @@ Validates the pause/resume state-machine mechanics:
   5. approval continuation clears the blocked state on resume
 
 Does NOT require live provider CLI execution.
-Evidence is written to agentorch_ctx/facts/probe-results/check-resume.json.
+Evidence is written to <data-root>/facts/probe-results/check-resume.json.
 """
 
 from __future__ import annotations

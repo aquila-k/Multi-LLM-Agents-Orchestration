@@ -14,7 +14,7 @@ Cost rule:
   - gemini: gemini-2.5-flash-lite
   - copilot: gpt-5-mini (0x, free)
 
-Evidence is written to agentorch_ctx/facts/probe-results/check-live-providers.json.
+Evidence is written to <data-root>/facts/probe-results/check-live-providers.json.
 """
 
 from __future__ import annotations

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run test suite
+        run: PYTHONPATH=. pytest agentorch_ctx/tests -q
+
+      - name: Run stub-safe validation
+        run: PYTHONPATH=. python agentorch_ctx/scripts/validation/run_checks.py --skip-live
+
+      - name: Build wheel
+        run: python -m pip wheel --no-deps .
