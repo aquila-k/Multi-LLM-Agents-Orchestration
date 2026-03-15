@@ -1,32 +1,64 @@
 #!/usr/bin/env bash
+# .contexts/run — thin wrapper that delegates to the installed agentorch CLI.
+# Kept for backward compatibility with existing tools and skill definitions
+# that invoke .contexts/run directly.
+#
+# Resolution order:
+#   1. Installed `agentorch` command (pip / uv) — includes vector if installed with [vector]
+#   2. Vector-enabled Python interpreters (for vector search support)
+#   3. Source-repo development fallback (PYTHONPATH + python3 -m)
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Priority 0: CONTEXTS_VECTOR_PYTHON env var override
-if [ -n "$CONTEXTS_VECTOR_PYTHON" ] && [ -x "$CONTEXTS_VECTOR_PYTHON" ]; then
-    exec "$CONTEXTS_VECTOR_PYTHON" "$SCRIPT_DIR/runtime" "$@"
+# Helper: try running agentorch_ctx with a given Python interpreter.
+# Validates that the path looks like a Python binary before executing.
+_try_python() {
+  local py="$1"; shift
+  local bn
+  bn="$(basename "$py")"
+  case "$bn" in
+    python|python3|python3.*) ;;
+    *) return 1 ;;  # reject non-python binaries
+  esac
+  if "$py" -c "import agentorch_ctx" 2>/dev/null; then
+    exec "$py" -m agentorch_ctx ctx "$@"
+  fi
+  return 1
+}
+
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+export CONTEXTS_HOME="$SCRIPT_DIR/local"
+
+# Priority 0: installed agentorch CLI (most common production case)
+if command -v agentorch &>/dev/null; then
+  exec agentorch ctx "$@"
 fi
 
-# Priority 1: saved path written by setup-vector
+# Priority 1: CONTEXTS_VECTOR_PYTHON env var override
+if [ -n "$CONTEXTS_VECTOR_PYTHON" ] && [ -x "$CONTEXTS_VECTOR_PYTHON" ]; then
+  _try_python "$CONTEXTS_VECTOR_PYTHON" "$@" || true
+fi
+
+# Priority 2: saved path written by setup-vector
 _vec_path_file="$SCRIPT_DIR/local/vector_python_path"
 if [ -f "$_vec_path_file" ]; then
-    _saved_python="$(cat "$_vec_path_file")"
-    if [ -x "$_saved_python" ]; then
-        exec "$_saved_python" "$SCRIPT_DIR/runtime" "$@"
-    fi
+  _saved_python="$(cat "$_vec_path_file")"
+  if [ -x "$_saved_python" ]; then
+    _try_python "$_saved_python" "$@" || true
+  fi
 fi
 
-# Priority 2: local .venv-vector/ (repo-root, legacy / manual setup)
+# Priority 3: local .venv-vector/ (repo-root, legacy / manual setup)
 _local_venv="$(dirname "$SCRIPT_DIR")/.venv-vector/bin/python"
 if [ -x "$_local_venv" ]; then
-    exec "$_local_venv" "$SCRIPT_DIR/runtime" "$@"
+  _try_python "$_local_venv" "$@" || true
 fi
 
-# Priority 3: global ~/.contexts-vector/
+# Priority 4: global ~/.contexts-vector/
 _global_venv="$HOME/.contexts-vector/bin/python"
 if [ -x "$_global_venv" ]; then
-    exec "$_global_venv" "$SCRIPT_DIR/runtime" "$@"
+  _try_python "$_global_venv" "$@" || true
 fi
 
-# Fallback: system python3 (FTS-only mode)
-exec python3 "$SCRIPT_DIR/runtime" "$@"
+# Priority 5: development fallback (source repo)
+PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}" exec python3 -m agentorch_ctx ctx "$@"

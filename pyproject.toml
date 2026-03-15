@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentorch-ctx"
+version = "0.1.0"
+description = "Multi-LLM agent orchestration CLI — orchestrate Gemini, Codex, and Copilot for plan/impl/review/harden workflows"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+vector = [
+    "numpy>=1.24",
+    "sqlite-vec>=0.1.6",
+    "fastembed>=0.4.0",
+]
+
+[project.scripts]
+agentorch = "agentorch_ctx.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agentorch_ctx"]
+
+# Exclude non-distributable content from the wheel
+[tool.hatch.build.targets.wheel.shared-data]
+
+# Note: Non-Python files (.json, .sql, .md, .yaml) inside agentorch_ctx/ are
+# automatically included by hatchling because packages = ["agentorch_ctx"].
+# No force-include needed.
+
+[tool.hatch.build]
+exclude = [
+    "agentorch_ctx/artifacts/",
+    "agentorch_ctx/state/",
+    "agentorch_ctx/facts/probe-results/",
+    "agentorch_ctx/tests/",
+    "agentorch_ctx/run",
+    "**/__pycache__/",
+    "**/.DS_Store",
+]

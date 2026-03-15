@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentorch/schemas/resume-selector.json",
+  "title": "Collab Resume Selector",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["plan", "impl", "review", "harden"]
+    },
+    "strategy": {
+      "type": "string"
+    },
+    "step": {
+      "type": "string"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "resume_from": {
+      "type": "string"
+    },
+    "approval_continuation": {
+      "type": "string"
+    },
+    "artifact_ref": {
+      "type": "string"
+    }
+  }
+}

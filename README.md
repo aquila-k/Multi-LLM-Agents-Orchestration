@@ -4,30 +4,108 @@
 
 A task orchestration runtime that routes work across multiple LLM providers (Codex, Copilot, Gemini) with structured phases, budget controls, and full artifact traceability.
 
-This repository contains two independent tools that can also work together:
+This repository provides two independent tools packaged as a single CLI:
 
-| Tool             | Purpose                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| **`collab/`**    | Orchestration runtime — routes tasks across LLMs through plan → impl → review → harden phases  |
-| **`.contexts/`** | Context manager — persists task knowledge, decisions, and snapshots in a local SQLite database |
+| Tool               | CLI                | Purpose                                                                      |
+| ------------------ | ------------------ | ---------------------------------------------------------------------------- |
+| **Orchestration**  | `agentorch collab` | Routes tasks across LLMs through plan / impl / review / harden phases        |
+| **Context Memory** | `agentorch ctx`    | Persists task knowledge, decisions, and snapshots in a local SQLite database |
+| **Task Registry**  | `agentorch task`   | Tracks active tasks, provider participation, and parent/child task hierarchy |
 
-Each tool stands on its own. Use `collab/` without `.contexts/`, use `.contexts/` with any agent, or use both together for the full experience.
+Each tool stands on its own. Use `agentorch collab` without `ctx`, use `ctx` with any agent, or use all together for the full experience.
 
 ---
 
-## `collab/` — Orchestration Runtime
+## Installation
+
+### From git (recommended for now)
+
+```bash
+# Clone and install
+git clone https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git
+cd Multi-LLM-Agents-Orchestration
+pip install -e .
+
+# With vector search support (optional)
+pip install -e ".[vector]"
+
+# Verify
+agentorch version
+agentorch doctor
+```
+
+### Using uv
+
+```bash
+uv pip install -e "git+https://github.com/aquila-k/Multi-LLM-Agents-Orchestration.git
+```
 
 ### Prerequisites
 
-- Python 3.13+
+- Python 3.11+
 - At least one LLM CLI installed and authenticated:
   - `codex` (OpenAI Codex)
   - `copilot` (GitHub Copilot CLI)
   - `gemini` (Google Gemini CLI)
 
-### Quick Start
+---
 
-**Write a goal:**
+## Quick Start
+
+### Initialize a project
+
+```bash
+cd your-project
+agentorch init                # Sets up everything: configs, context DB, agent instructions
+```
+
+This creates:
+
+- `.agentorch/configs/` — orchestration settings (editable)
+- `.contexts/local/context.db` — context memory database (gitignored)
+- `.claude/skills/`, `.agents/skills/`, `.github/instructions/` — per-agent instructions
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` — agent instruction sections appended
+
+You can also initialize each component separately:
+
+```bash
+agentorch collab init         # Orchestration configs + Claude Code instructions only
+agentorch ctx init            # Context DB + all-agent instructions only
+```
+
+### Run a workflow
+
+```bash
+agentorch collab plan   --source /path/to/goal.md
+agentorch collab impl   --source /path/to/task.json
+agentorch collab review --source /path/to/task.md
+agentorch collab harden --source /path/to/task.md
+```
+
+### Use context memory
+
+```bash
+# Register a task
+TASK_ID=$(agentorch task create --summary "Fix auth bug" --provider claude)
+
+# Search past decisions
+agentorch ctx search-memory --query "authentication" --limit 10
+
+# Record a decision
+echo '{"decision": "Use JWT", "reason": "Stateless auth needed", "semantic_hint": "JWT auth decision"}' \
+  | agentorch ctx log-decision --key auth-method --scope task/$TASK_ID --stdin
+
+# Retrieve task context
+agentorch ctx get-task-context --task-id $TASK_ID --include-project
+```
+
+---
+
+## `agentorch collab` — Orchestration Runtime
+
+### Source File Formats
+
+Simple Markdown or structured JSON for fine-grained control:
 
 ```markdown
 # Refactor authentication module
@@ -35,27 +113,6 @@ Each tool stands on its own. Use `collab/` without `.contexts/`, use `.contexts/
 Consolidate auth helpers into a single AuthService class.
 Keep backward compatibility with existing imports.
 ```
-
-Save as `goal.md`, then run:
-
-```bash
-./collab/run plan --source /path/to/goal.md
-./collab/run impl --source /path/to/goal.md
-```
-
-The runtime selects providers, assembles prompts, executes steps, and stores artifacts automatically.
-
-### Optional flags
-
-```bash
---strategy STRATEGY_ID    # Override automatic strategy selection
---with-harden             # Combine review + harden in one pass
---dry-run                 # Validate config without calling providers
-```
-
-### Source File Formats
-
-Simple Markdown or structured JSON for fine-grained control:
 
 ```json
 {
@@ -66,9 +123,15 @@ Simple Markdown or structured JSON for fine-grained control:
 }
 ```
 
-### Phases & Strategies
+### Optional flags
 
-Each phase has predefined strategies — multi-step workflows optimized for different scenarios.
+```bash
+--strategy STRATEGY_ID    # Override automatic strategy selection
+--with-harden             # Combine review + harden in one pass
+--dry-run                 # Validate config without calling providers
+```
+
+### Phases & Strategies
 
 | Phase      | Strategies                                                              | Purpose                       |
 | ---------- | ----------------------------------------------------------------------- | ----------------------------- |
@@ -83,41 +146,36 @@ All strategy names are prefixed with `COLLAB_{PHASE}_` (e.g., `COLLAB_PLAN_FULL`
 
 The routing engine automatically selects the best provider for each step:
 
-1. **Filter** — eliminates candidates missing required capabilities (session resume, JSON schema, etc.)
+1. **Filter** — eliminates candidates missing required capabilities
 2. **Score** — ranks by context fit, tool fit, cost, and reliability
 3. **Select** — picks the highest-scoring candidate
 4. **Guard** — pauses execution if cost exceeds the hard budget cap
-
-Providers and model presets are configured in `collab/configs/user/`.
 
 ### Budget & Approval Gates
 
 - **Soft cap**: Reranks providers toward cheaper options
 - **Hard cap**: Pauses execution with `STOP_AND_CONFIRM`
-- **Resume**: Create a resume JSON with `approval_continuation: approved` and run `./collab/run resume --source resume.json`
+- **Resume**: `agentorch collab resume --source resume.json`
 
 ### Artifacts
 
 Every execution produces a complete JSON audit trail:
 
 ```
-collab/artifacts/tasks/<task_id>/
+.agentorch/artifacts/tasks/<task_id>/
   ├── requests/        # Input requests
   ├── routing/         # Provider selection results
   ├── prompts/         # Assembled prompt bundles
   ├── responses/       # Raw provider responses
   ├── normalized/      # Canonicalized outputs
-  ├── checkpoints/     # Git state snapshots
   ├── events.jsonl     # Event log
   └── manifests/       # Lineage manifest
 ```
 
-Artifacts are project-specific runtime data, excluded from the repository via `.gitignore`.
-
 ### Configuration
 
 ```
-collab/configs/user/
+.agentorch/configs/
   ├── plan.json       # Plan phase strategies & model presets
   ├── impl.json       # Impl phase strategies
   ├── review.json     # Review phase strategies
@@ -125,130 +183,48 @@ collab/configs/user/
   └── providers.json  # Default provider settings
 ```
 
-Each config defines `$presets` (model shortcuts) and `strategies` (step sequences). The `default` key sets the fallback preset.
-
 ---
 
-## `.contexts/` — Context Manager
+## `agentorch ctx` — Context Memory
 
-**Works independently** from `collab/`. Drop it into any project to give your AI agents persistent memory across sessions.
-
-### Setup
-
-```bash
-.contexts/run init
-```
-
-Creates `.contexts/local/` (git-ignored) with a SQLite database.
+Persistent, SQLite-backed memory for AI coding agents. Works with any agent.
 
 ### Key Commands
 
 ```bash
 # Retrieve context at task start
-.contexts/run get-task-context --task-id <id> --include-project --format markdown
+agentorch ctx get-task-context --task-id <id> --include-project
 
 # Save progress during work
-.contexts/run update-task-context --task-id <id> --expected-revision 0 < snapshot.json
+echo '<snapshot JSON>' | agentorch ctx update-task-context --task-id <id> --expected-revision 0 --stdin
 
 # Record a design decision
-.contexts/run log-decision --key <key> --scope task/<id> < decision.json
+echo '<decision JSON>' | agentorch ctx log-decision --key <key> --scope task/<id> --stdin
 
-# Search past memory (keyword)
-.contexts/run search-memory --query "keyword" --limit 10
+# Search past memory
+agentorch ctx search-memory --query "keyword" --limit 10
 
-# Search past memory (semantic or hybrid — requires vector search to be set up)
-.contexts/run search-memory --query "keyword" --mode hybrid --limit 10
+# Semantic/hybrid search (requires vector setup)
+agentorch ctx search-memory --query "why was this choice made" --mode hybrid
 
-# Maintenance
-.contexts/run doctor          # Health check
-.contexts/run render-context  # Render markdown summary for a scope
+# Health check
+agentorch ctx doctor
 ```
 
 ### Vector Search (Optional)
 
-`.contexts/` ships with **FTS5 keyword search** out of the box. An optional **vector (semantic) search** layer can be added without affecting the existing database or any existing commands.
+FTS5 keyword search works out of the box. Optional vector search adds semantic capabilities:
 
-| Profile | Requirements | Search modes |
-| --- | --- | --- |
-| **core** (default) | Python 3.8+, SQLite | `fts` only |
-| **vector-enabled** | Python 3.12, `sqlite-vec`, `fastembed` | `fts`, `semantic`, `hybrid`, `auto` |
-
-#### Setting up the vector-enabled profile
-
-`.contexts/run` is a single unified entry point. Once vector search is set up, it is used automatically — no separate command or entry point is needed.
+| Profile            | Requirements                            | Search modes                        |
+| ------------------ | --------------------------------------- | ----------------------------------- |
+| **core** (default) | Python 3.11+, SQLite                    | `fts` only                          |
+| **vector-enabled** | Python 3.12+, `sqlite-vec`, `fastembed` | `fts`, `semantic`, `hybrid`, `auto` |
 
 ```bash
-# See what will be installed (disk/time warnings, no changes made)
-.contexts/run setup-vector --dry-run
-
-# Install locally (creates .venv-vector/ next to .contexts/)
-.contexts/run setup-vector
-
-# Install globally to share dependencies across projects (~400 MB saved per project)
-.contexts/run setup-vector --global
-
-# Install to a custom location
-.contexts/run setup-vector --venv-path /path/to/venv
-
-# Verify setup
-.contexts/run vector-doctor
-```
-
-Notes:
-
-- First run downloads ~90 MB embedding model to `~/.cache/huggingface/`
-- Total disk: ~400 MB packages + ~90 MB model weights
-- Initial index build takes 1–3 minutes
-- FTS keyword search works immediately without any setup
-- With `--global`, Python packages are shared across repos; the vector index stays project-local
-
-#### Using vector search
-
-After setup, all search commands use the same `.contexts/run` entry point:
-
-```bash
-# Auto-select best mode (hybrid when vector available, fts otherwise)
-.contexts/run search-memory --query "why was this choice made" --mode auto
-
-# Semantic search (meaning-based, language-independent)
-.contexts/run search-memory --query "authentication approach" --mode semantic
-
-# Hybrid search (FTS + semantic, merged via reciprocal rank fusion)
-.contexts/run search-memory --query "database schema decision" --mode hybrid
-
-# Keep the index up to date after writes
-.contexts/run sync-vector-index
-```
-
-If `semantic` or `hybrid` is requested but vector search is not set up, the response falls back to FTS and includes a `setup_hint` field.
-
-### Using `.contexts/` with Any Agent
-
-Add a few lines to your agent's instruction file to enable automatic context retrieval:
-
-**Claude** (`CLAUDE.md` or `.github/copilot-instructions.md`):
-
-```markdown
-## Context
-
-Before starting work: `.contexts/run get-task-context --task-id <TASK_ID> --include-project --format markdown`
-After completing work: `.contexts/run update-task-context --task-id <TASK_ID> --expected-revision 0 < snapshot.json`
-```
-
-**Codex** (`.codex/instructions.md`):
-
-```markdown
-Before starting any task, retrieve context:
-.contexts/run get-task-context --task-id <TASK_ID> --include-project
-After completing work, save progress:
-.contexts/run update-task-context --task-id <TASK_ID> --expected-revision 0 < snapshot.json
-```
-
-**Gemini** (`GEMINI.md`):
-
-```markdown
-On task start: `.contexts/run get-task-context --task-id <TASK_ID> --include-project --format markdown`
-On task end: `.contexts/run update-task-context --task-id <TASK_ID> --expected-revision 0 < snapshot.json`
+pip install -e ".[vector]"           # Install vector dependencies
+agentorch ctx setup-vector           # Build the vector index
+agentorch ctx vector-doctor          # Verify setup
+agentorch ctx sync-vector-index      # Keep index up to date after writes
 ```
 
 ### Entry Types
@@ -261,36 +237,73 @@ On task end: `.contexts/run update-task-context --task-id <TASK_ID> --expected-r
 | `episode`         | task         | Phase observations and lessons   |
 | `procedural_rule` | any          | Reusable process rules           |
 
-### Scoping Hierarchy
+---
 
-```
-project → branch → task → session
+## `agentorch task` — Task Registry
+
+Tracks active tasks across agents and sessions.
+
+```bash
+# Create a task
+TASK_ID=$(agentorch task create --summary "Refactor auth" --provider claude)
+
+# Check current active task (useful after context compression)
+agentorch task current
+
+# Create a child task (for sub-goals or delegated work)
+agentorch task create --summary "Plan: refactor auth" --parent $TASK_ID --provider claude
+
+# List tasks
+agentorch task list --status active
+
+# Mark completed
+agentorch task status $TASK_ID --set completed
+
+# Find stale tasks (active but process gone)
+agentorch task check
 ```
 
-More specific scopes inherit from broader ones. Entries at `task`/`session` scope auto-activate; `project`/`branch` scope requires operator approval.
+---
+
+## Agent Instructions
+
+`agentorch init` automatically generates instruction files for each agent:
+
+| Agent       | Files generated                                                                 |
+| ----------- | ------------------------------------------------------------------------------- |
+| Claude Code | `.claude/skills/agentorch-{collab,ctx}/`, `.claude/rules/`, `CLAUDE.md` section |
+| Codex       | `.agents/skills/agentorch-ctx/`, `AGENTS.md` section                            |
+| Copilot     | `.github/instructions/agentorch-ctx.instructions.md`                            |
+| Gemini      | `GEMINI.md` section                                                             |
+
+Orchestration (`collab`) is Claude Code exclusive. Context memory (`ctx`) is available to all agents.
 
 ---
 
 ## Project Structure
 
 ```
-collab/                     # Orchestration runtime (standalone)
-  ├── run                   # CLI entry point
+agentorch_ctx/              # Python package (installed via pip)
+  ├── __main__.py           # CLI: agentorch version|doctor|init|collab|ctx|task
   ├── runtime/              # Task runner, routing, providers, artifacts
-  ├── configs/user/         # User-editable phase configs
-  ├── schemas/              # JSON schemas for artifacts & configs
-  ├── docs/                 # Design policy documents
-  └── tests/                # Unit, integration, stub-e2e, regression
-
-.contexts/                  # Context manager (standalone)
-  ├── run                   # Unified CLI entry point (auto-detects venv, falls back to python3)
-  ├── runtime/
+  ├── contexts/             # Context management runtime
+  │   ├── sql/              # Migration scripts
+  │   ├── schemas/          # Entry payload schemas
   │   └── vector/           # Vector search extension (optional)
-  ├── sql/                  # Migration scripts
-  ├── schemas/              # Entry payload schemas
-  └── local/                # git-ignored; DB, config, and vector_python_path live here
+  ├── task_registry/        # Task tracking database
+  ├── configs/              # Internal defaults + user config templates
+  ├── templates/            # Agent instruction templates (generated by init)
+  ├── schemas/              # JSON schemas for artifacts & configs
+  └── tests/                # Unit, integration, regression tests
 
-.venv-vector/               # git-ignored; optional repo-local vector venv (created by setup-vector)
+.agentorch/                 # Created by `agentorch init` (project-specific)
+  ├── configs/              # User-editable phase & provider configs
+  ├── artifacts/            # Task artifacts (gitignored)
+  └── state/                # Runtime state (gitignored)
+
+.contexts/                  # Created by `agentorch ctx init` (project-specific)
+  ├── run                   # Backward-compatible wrapper script
+  └── local/                # gitignored: DB, config, vector_python_path
 ```
 
 ## License
