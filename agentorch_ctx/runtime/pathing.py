@@ -81,7 +81,7 @@ def resolve_config_root(repo_root: Path) -> Path:
       4. ``package_root()``           — pip-installed package (internal defaults)
     """
     init_dir = repo_root / _INIT_DIR_NAME
-    if (init_dir / "configs").exists():
+    if (init_dir / "configs").exists() and (init_dir / "configs" / "internal").exists():
         return init_dir
     pkg_dir = repo_root / _PKG_DIR_NAME
     if (pkg_dir / "configs").exists():
