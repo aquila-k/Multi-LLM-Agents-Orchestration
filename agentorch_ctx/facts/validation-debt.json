@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0.0",
+  "sourceDocuments": [
+    ".absolute-plan/collab-runtime-implementation/D37-initial-verified-facts-seed.md",
+    ".absolute-plan/collab-runtime-implementation/D90-open-questions-and-validation-debt.md",
+    ".absolute-plan/collab-runtime-implementation/V10-live-execution-validation-plan.md"
+  ],
+  "openItems": [
+    {
+      "category": "live_validation",
+      "provider": "codex",
+      "item": "exec resume combined with output-specific convenience behavior"
+    },
+    {
+      "category": "live_validation",
+      "provider": "codex",
+      "item": "headless exit-code, proxy, CA, and broken-pipe behavior"
+    },
+    {
+      "category": "live_validation",
+      "provider": "codex",
+      "item": "whether current headless resume lives under exec despite top-level help exposing interactive resume separately"
+    },
+    {
+      "category": "live_validation",
+      "provider": "copilot",
+      "item": "headless --resume <SESSION_ID> -p stability"
+    },
+    {
+      "category": "live_validation",
+      "provider": "copilot",
+      "item": "non-interactive invocation stability, trust-directory prompts, and help-advertised JSONL output behavior"
+    },
+    {
+      "category": "live_validation",
+      "provider": "gemini",
+      "item": "stream-json content payload shape stability"
+    },
+    {
+      "category": "live_validation",
+      "provider": "gemini",
+      "item": "headless auth, quota, and exit-code signatures in JSON modes"
+    },
+    {
+      "category": "live_validation",
+      "provider": "gemini",
+      "item": "reconcile imported --resume <uuid> seed with current help-advertised latest or session-index forms"
+    },
+    {
+      "category": "latest_info",
+      "provider": "all",
+      "item": "current pricing and rate facts"
+    },
+    {
+      "category": "latest_info",
+      "provider": "all",
+      "item": "current recommended model aliases per provider"
+    },
+    {
+      "category": "latest_info",
+      "provider": "all",
+      "item": "current provider CLI feature behavior and machine-output guarantees"
+    }
+  ]
+}

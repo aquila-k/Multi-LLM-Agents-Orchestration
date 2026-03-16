@@ -1,0 +1,32 @@
+{
+  "seedId": "bootstrap-provider-market-facts",
+  "records": [
+    {
+      "provider": "codex",
+      "model": "codex-primary",
+      "pricingSource": "unverified",
+      "rateLimitSource": "unverified",
+      "fetchedAt": null,
+      "staleAt": null,
+      "hardExpireAt": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-primary",
+      "pricingSource": "unverified",
+      "rateLimitSource": "unverified",
+      "fetchedAt": null,
+      "staleAt": null,
+      "hardExpireAt": null
+    },
+    {
+      "provider": "copilot",
+      "model": "copilot-primary",
+      "pricingSource": "unverified",
+      "rateLimitSource": "unverified",
+      "fetchedAt": null,
+      "staleAt": null,
+      "hardExpireAt": null
+    }
+  ]
+}

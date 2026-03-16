@@ -1,0 +1,131 @@
+{
+  "seedId": "initial-import-from-plan-00-verified-facts",
+  "provenance": {
+    "sourcePath": ".plan/00-verified-facts.md",
+    "importNote": "Imported into the standalone collab runtime as the initial verified fact seed."
+  },
+  "records": [
+    {
+      "provider": "codex",
+      "factId": "session.resume.headless",
+      "capabilityId": "session.resume",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "supported": true,
+        "invokeShape": "codex exec resume <SESSION_ID> ..."
+      },
+      "notes": "Imported from prior validation. Reprobe if provider or environment changes materially."
+    },
+    {
+      "provider": "codex",
+      "factId": "session.id.uuid",
+      "capabilityId": "session.id_format",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "format": "uuid"
+      },
+      "notes": "Use as a session reference shape hint, not as a blanket guarantee of all resume flows."
+    },
+    {
+      "provider": "codex",
+      "factId": "session.storage_path",
+      "capabilityId": "session.storage_tracking",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "path": "~/.codex/sessions/"
+      },
+      "notes": "Tracking location only. Access semantics remain environment-sensitive."
+    },
+    {
+      "provider": "gemini",
+      "factId": "session.resume.headless",
+      "capabilityId": "session.resume",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "supported": true,
+        "invokeShape": "--resume <uuid>"
+      },
+      "notes": "Imported from prior validation."
+    },
+    {
+      "provider": "gemini",
+      "factId": "output.stream_json.init_session_id",
+      "capabilityId": "output.stream_json",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "event": "init",
+        "field": "session_id"
+      },
+      "notes": "Specific to init event session metadata, not the full message payload grammar."
+    },
+    {
+      "provider": "gemini",
+      "factId": "session.resume.latest",
+      "capabilityId": "session.resume_latest",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "supported": true,
+        "invokeShape": "--resume latest"
+      },
+      "notes": "Scope-sensitive behavior imported from prior validation."
+    },
+    {
+      "provider": "copilot",
+      "factId": "session.resume.flag_exists",
+      "capabilityId": "session.resume_flag",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "flag": "--resume",
+        "supported": true
+      },
+      "notes": "Flag existence alone does not promote headless resume reliability."
+    },
+    {
+      "provider": "copilot",
+      "factId": "session.continue.flag_exists",
+      "capabilityId": "session.continue_flag",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "flag": "--continue",
+        "supported": true
+      },
+      "notes": "Presence confirmed; operational semantics remain separate."
+    },
+    {
+      "provider": "copilot",
+      "factId": "session.storage_path",
+      "capabilityId": "session.storage_tracking",
+      "state": "verified",
+      "evidenceSource": "imported_verified_fact",
+      "value": {
+        "path": "~/.copilot/session-state/"
+      },
+      "notes": "Tracking location only."
+    },
+    {
+      "provider": "copilot",
+      "factId": "session.resume.headless_prompt_mode",
+      "capabilityId": "session.resume",
+      "state": "unknown",
+      "evidenceSource": "explicitly_unverified_in_seed",
+      "value": {
+        "supported": null,
+        "invokeShape": "--resume <SESSION_ID> -p"
+      },
+      "notes": "Do not treat as verified. Requires live validation."
+    }
+  ],
+  "failClosedRules": [
+    "resume capability is resolved per tool",
+    "uncertain resume paths fall back to fresh execution",
+    "high-impact low-confidence paths require stop-and-confirm"
+  ]
+}

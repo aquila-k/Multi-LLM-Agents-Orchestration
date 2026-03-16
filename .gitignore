@@ -51,6 +51,9 @@ plan/
 agentorch_ctx/artifacts/tasks/
 agentorch_ctx/state/
 
-# agentorch_ctx facts — keep READMEs, exclude runtime probe/env data
+# agentorch_ctx facts — keep READMEs and static seed files, exclude runtime probe/env data
 agentorch_ctx/facts/**/*.json
 agentorch_ctx/facts/*.json
+!agentorch_ctx/facts/verified-facts/imported-seed.json
+!agentorch_ctx/facts/validation-debt.json
+!agentorch_ctx/facts/provider-market-facts/bootstrap.json
